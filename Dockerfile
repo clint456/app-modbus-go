@@ -35,7 +35,7 @@ FROM alpine:3.20
 ARG TARGETARCH
 ARG VERSION
 
-LABEL Name=app-demo-go Version=${VERSION}
+LABEL Name=app-modbus-go Version=${VERSION}
 
 # 使用阿里云源 + 安装必要工具
 RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirrors.aliyun.com/alpine/|g' /etc/apk/repositories && \
@@ -43,9 +43,9 @@ RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirrors.aliyun.com/
     apk --no-cache upgrade
 
 # 从 builder 复制二进制和配置（使用 builder 中的绝对路径）
-COPY --from=builder /app/cmd/app-demo-go /app-demo-go
+COPY --from=builder /app/cmd/app-modbus-go /app-modbus-go
 COPY --from=builder /app/cmd/res/        /res/
 
 # 使用 dumb-init 作为 init 进程 + 运行程序
 ENTRYPOINT ["/usr/bin/dumb-init", "--"]
-CMD ["/app-demo-go", "-cp=keeper.http://edgex-core-keeper:59890", "--registry"]
+CMD ["/app-modbus-go", "-cp=keeper.http://edgex-core-keeper:59890", "--registry"]

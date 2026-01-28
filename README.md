@@ -1,4 +1,4 @@
-# EdgeX 应用服务开发demo
+# EdgeX 应用服务开发modbus
 
 ## 1.命名规则
 
@@ -8,8 +8,8 @@ app-[服务名]-go
 
 ## 2.开发指导
 ### 2.1 命名替换
-- 将所有的`app-demo-go`替换为`app-[服务名]-go`
-- 将所有的`demo`替换为`[服务名]`
+- 将所有的`app-modbus-go`替换为`app-[服务名]-go`
+- 将所有的`modbus`替换为`[服务名]`
 
 ### 2.3 启动核心服务环境
 ```bash
@@ -39,6 +39,6 @@ make docker-[amd64 or arm64]
 
 cd cmd/docker-compose
 
-docker compose -f docker-compose-demo.yml up
+docker compose -f docker-compose-modbus.yml up
 ```
 ![](docs/image.png)

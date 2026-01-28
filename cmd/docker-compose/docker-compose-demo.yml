@@ -1,17 +1,17 @@
 # EdgeX Device Modbus Service
 name: edgex
 services:
-  app-demo-go:
+  app-modbus-go:
     command:
-      - /app-demo-go
+      - /app-modbus-go
       - -cp=keeper.http://edgex-core-keeper:59890
       - --registry
-    container_name: app-demo-go
+    container_name: app-modbus-go
     environment:
       EDGEX_SECURITY_SECRET_STORE: "false"
-      SERVICE_HOST: app-demo-go
-    hostname: edgex-app-demo-go
-    image:  linux/amd64/app-demo-go:0.0.0-dev
+      SERVICE_HOST: app-modbus-go
+    hostname: edgex-app-modbus-go
+    image:  linux/amd64/app-modbus-go:0.0.0-dev
     networks:
       edgex-network: null
     read_only: true

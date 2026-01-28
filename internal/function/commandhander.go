@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"strings"
 
-	"app-demo-go/internal/pkg/logger"
+	"app-modbus-go/internal/pkg/logger"
 
 	"github.com/edgexfoundry/app-functions-sdk-go/v4/pkg/interfaces"
 )
@@ -107,7 +107,7 @@ func (h *CommandHandler) handleGetVersion(params map[string]interface{}) *Comman
 		Message: "版本信息获取成功",
 		Data: map[string]interface{}{
 			"hardware_version": string(versionData),
-			"software_version": "app-demo-go v0.0.0",
+			"software_version": "app-modbus-go v0.0.0",
 			"version_data":     fmt.Sprintf("%x", versionData), // 十六进制格式
 		},
 	}

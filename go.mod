@@ -1,4 +1,4 @@
-module app-demo-go
+module app-modbus-go
 
 go 1.25
 

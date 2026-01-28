@@ -8,8 +8,8 @@ import (
 	"syscall"
 	"time"
 
-	"app-demo-go/internal/app"
-	functions "app-demo-go/internal/function"
+	"app-modbus-go/internal/app"
+	functions "app-modbus-go/internal/function"
 
 	"github.com/edgexfoundry/app-functions-sdk-go/v4/pkg"
 	"github.com/edgexfoundry/app-functions-sdk-go/v4/pkg/interfaces"
@@ -17,7 +17,7 @@ import (
 
 const (
 	// serviceKey EdgeX应用服务的唯一标识符
-	serviceKey = "app-demo-go"
+	serviceKey = "app-modbus-go"
 )
 
 // createAndRunAppService 创建并运行应用服务

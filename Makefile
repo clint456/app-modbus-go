@@ -8,11 +8,11 @@ DOCKER_PLATFORM ?= linux/arm64
 # 版本和镜像配置
 VERSION := $(shell cat ./VERSION 2>/dev/null || echo 0.0.0)
 GIT_SHA := $(shell git rev-parse HEAD)
-IMAGE := app-demo-go
+IMAGE := app-modbus-go
 BUILD_DATE := $(shell date +%Y-%m-%dT%H-%M-%SZ)
 
 # 构建标志
-MICROSERVICES := cmd/app-demo-go
+MICROSERVICES := cmd/app-modbus-go
 GOFLAGS := -ldflags "-s -w" -trimpath -mod=readonly
 
 # 构建目标

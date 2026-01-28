@@ -7,16 +7,17 @@ Writable:
 Service:
   Host: localhost           # 服务监听地址
   Port: 59711               # 应用服务 HTTP API 端口
-  StartupMsg: "app-demo-go Application Service has started"  # 启动日志消息
+  StartupMsg: "app-modbus-go Application Service has started"  # 启动日志消息
 
 MessageBus:
   Disabled: false           # 是否禁用消息总线（false 表示启用）
+  BaseTopicPrefix: "v1"    # 自定义前缀  
   Optional:
-    ClientId: "app-demo-go"  # 消息总线客户端 ID（用于区分多个 App Service）
+    ClientId: "app-modbus-go"  # 消息总线客户端 ID（用于区分多个 App Service）
 
 Trigger:  
-  SubscribeTopics: "command/demo/+"  # 应用服务订阅的消息总线主题（支持 MQTT 通配符）
-  PublishTopic: "command/demo/response" # 应用服务处理后发布的主题
+  SubscribeTopics: "data/+"  # 应用服务订阅的消息总线主题（支持 MQTT 通配符）
+  PublishTopic: "data/down" # 应用服务处理后发布的主题
 
 # ===============================
 # 自定义应用配置 (AppCustom)
@@ -28,5 +29,4 @@ AppCustom:
   Pipelines: 
     Enabled: true
     Topics: 
-      - "command/demo/control"
-
+      - "data/modbus"   # 订阅的主题列表，支持 MQTT 通配符

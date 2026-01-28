@@ -1,13 +1,13 @@
 package app
 
 import (
-	"app-demo-go/config"
-	functions "app-demo-go/internal/function"
+	"app-modbus-go/config"
+	functions "app-modbus-go/internal/function"
 	"context"
 	"fmt"
 	"reflect"
 
-	"app-demo-go/internal/pkg/logger"
+	"app-modbus-go/internal/pkg/logger"
 
 	"github.com/edgexfoundry/app-functions-sdk-go/v4/pkg/interfaces"
 )
@@ -35,7 +35,7 @@ func (app *AppSerice) SetupPipelines() error {
 	if controlTopics == nil {
 		// 使用默认控制主题
 		app.Lc.Warn("Pipelines.Topics 为空，使用默认主题")
-		controlTopics = []string{"command/demo/control"}
+		controlTopics = []string{"command/modbus/control"}
 	}
 
 	app.Lc.Infof("订阅控制主题: %v", controlTopics)

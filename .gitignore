@@ -1,10 +1,10 @@
 test.txt
 debug
 *.exe
-app-demo-go
+app-modbus-go
 coverage.out
 logs/
 .idea
 VERSION
 /vendor/
-app-demo*
+app-modbus*
