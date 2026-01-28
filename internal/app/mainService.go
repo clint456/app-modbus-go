@@ -66,12 +66,6 @@ func (app *AppSerice) InitializeEdgeXService(serviceKey string, targetType inter
 
 // LoadAndValidateConfig 加载和验证配置
 func (app *AppSerice) LoadAndValidateConfig() error {
-	// 获取设备名称配置
-	_, err := app.Service.GetAppSettingStrings("DeviceNames")
-	if err != nil {
-		return err
-	}
-
 	// 加载自定义配置
 	app.ServiceConfig = &config.ServiceConfig{}
 	if err := app.Service.LoadCustomConfig(app.ServiceConfig, "AppCustom"); err != nil {

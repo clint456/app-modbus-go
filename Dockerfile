@@ -14,18 +14,18 @@ ARG ALPINE_PKG_EXTRA=""
 ARG TARGETARCH
 ARG TARGETOS=linux
 
-# >>> 关键修改：替换为阿里云 Alpine 镜像源（支持 v3.20）
+# 使用阿里云 Alpine 镜像源加速
 RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirrors.aliyun.com/alpine/|g' /etc/apk/repositories && \
-    apk add --update --no-cache ${ALPINE_PKG_BASE} ${ALPINGE_PKG_EXTRA}
+    apk add --update --no-cache ${ALPINE_PKG_BASE} ${ALPINE_PKG_EXTRA}
 
-WORKDIR /app
-COPY go.mod vendor* ./
-RUN [ ! -d "vendor" ] && go mod download all || echo "skipping..."
-COPY . .
+# 直接把项目拷贝到 /app 目录（不设 WORKDIR）
+COPY . /app/
 
-ARG MAKE="make build-${TARGETARCH}"
-RUN $MAKE
+# 如果有 vendor 就用，没有就下载依赖
+RUN [ -d "/app/vendor" ] && echo "using vendor mode" || (cd /app && go mod download)
 
+# 执行构建（强制进入 /app 目录执行 make）
+RUN cd /app && make build-${TARGETARCH}
 
 # ===================================
 # 第二阶段：最终运行镜像 (Final Stage)
@@ -37,19 +37,15 @@ ARG VERSION
 
 LABEL Name=app-demo-go Version=${VERSION}
 
+# 使用阿里云源 + 安装必要工具
 RUN sed -i 's|https://dl-cdn.alpinelinux.org/alpine/|https://mirrors.aliyun.com/alpine/|g' /etc/apk/repositories && \
-    apk add --update --no-cache ca-certificates dumb-init && \
+    apk add --no-cache ca-certificates dumb-init && \
     apk --no-cache upgrade
 
-# 从 builder 阶段复制二进制文件
-COPY --from=builder /app/app-demo-go-${TARGETARCH} /app-demo-go
+# 从 builder 复制二进制和配置（使用 builder 中的绝对路径）
+COPY --from=builder /app/cmd/app-demo-go /app-demo-go
+COPY --from=builder /app/cmd/res/        /res/
 
-# 复制配置
-COPY --from=builder /app/res/ /res/
-
-# 暴露端口
-EXPOSE 59891
-
-# 入口点应为通用名称（不带架构后缀）
-ENTRYPOINT ["/app-demo-go"]
-CMD ["-cp=keeper.http://edgex-core-keeper:59890", "--registry"]
+# 使用 dumb-init 作为 init 进程 + 运行程序
+ENTRYPOINT ["/usr/bin/dumb-init", "--"]
+CMD ["/app-demo-go", "-cp=keeper.http://edgex-core-keeper:59890", "--registry"]

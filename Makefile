@@ -8,7 +8,6 @@ DOCKER_PLATFORM ?= linux/arm64
 # 版本和镜像配置
 VERSION := $(shell cat ./VERSION 2>/dev/null || echo 0.0.0)
 GIT_SHA := $(shell git rev-parse HEAD)
-REGISTRY := 172.16.19.76:5000
 IMAGE := app-demo-go
 BUILD_DATE := $(shell date +%Y-%m-%dT%H-%M-%SZ)
 
@@ -36,7 +35,7 @@ docker:
 		--label "build.date=$(BUILD_DATE)" \
 		--label "build.version=$(VERSION)" \
 		--label "git_sha=$(GIT_SHA)" \
-		-t $(REGISTRY)/$(DOCKER_PLATFORM)/$(IMAGE):$(VERSION)-dev \
+		-t $(DOCKER_PLATFORM)/$(IMAGE):$(VERSION)-dev \
 		--load \
 		.
 

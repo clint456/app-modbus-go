@@ -1,0 +1,32 @@
+# EdgeX Device Modbus Service
+name: edgex
+services:
+  app-demo-go:
+    command:
+      - /app-demo-go
+      - -cp=keeper.http://edgex-core-keeper:59890
+      - --registry
+    container_name: app-demo-go
+    environment:
+      EDGEX_SECURITY_SECRET_STORE: "false"
+      SERVICE_HOST: app-demo-go
+    hostname: edgex-app-demo-go
+    image:  linux/amd64/app-demo-go:0.0.0-dev
+    networks:
+      edgex-network: null
+    read_only: true
+    restart: always
+    security_opt:
+      - no-new-privileges:true
+    user: 2002:2001
+    volumes:
+      - type: bind
+        source: /etc/localtime
+        target: /etc/localtime
+        read_only: true
+        bind:
+          create_host_path: true
+networks:
+  edgex-network:
+    name: edgex_edgex-network
+    driver: bridge

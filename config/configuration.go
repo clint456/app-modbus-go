@@ -18,6 +18,12 @@ type AppCustomConfig struct {
 	Pipelines PipelinesConfig `yaml:"Pipelines"`
 }
 
+// PipelinesConfig 管道配置
+type PipelinesConfig struct {
+	Enabled bool     `yaml:"Enabled"`
+	Topics  []string `yaml:"Topics"` // MQTT 主题数组
+}
+
 // UpdateFromRaw 从服务提供商接收的原始数据更新服务的完整配置。
 // 这里的ServiceConfig将会被 LoadCustomConfig(config interfaces.UpdatableConfig, sectionName string)调用
 // 这个config是一个接口并且要求实现UpdateFromRaw方法
@@ -31,12 +37,6 @@ func (c *ServiceConfig) UpdateFromRaw(rawConfig interface{}) bool {
 	*c = *configuration
 
 	return true
-}
-
-// PipelinesConfig 管道配置
-type PipelinesConfig struct {
-	Enabled bool     `yaml:"Enabled"`
-	Topics  []string `yaml:"Topics"` // MQTT 主题数组
 }
 
 // Validate 验证自定义配置的有效性

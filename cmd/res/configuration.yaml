@@ -3,38 +3,11 @@
 # ===============================
 Writable:
   LogLevel: "INFO"         # EdgeX系統日志级别: TRACE, DEBUG, INFO, WARN, ERROR
-  InsecureSecrets:          # 本地开发时的 HTTPS 证书存放（不安全，生产应替换为 Vault）
-    HTTPS:
-      path: "https"
-      Secrets:
-        cert: ""            # HTTPS 证书文件内容
-        key: ""             # HTTPS 私钥内容
-  Telemetry:                # 遥测指标配置
-    Metrics:
-      EventsConvertedToXML: true   # 是否收集 XML 转换事件的指标
 
 Service:
   Host: localhost           # 服务监听地址
   Port: 59711               # 应用服务 HTTP API 端口
   StartupMsg: "app-demo-go Application Service has started"  # 启动日志消息
-
-HttpServer:
-  Protocol: "http"          # Web 服务协议，可选 http / https
-  SecretName: "https"       # 在 Secret Store 里存放的凭证名称
-  HTTPSCertName: "cert"     # Secret 中证书字段名称
-  HTTPSKeyName: "key"       # Secret 中私钥字段名称
-
-Clients:                    # EdgeX 核心服务客户端配置
-  core-data:
-    Protocol: "http"
-    Host: "localhost"
-    Port: 59880             # Core Data 服务地址
-  core-command:
-    UseMessageBus: true     # 使用消息总线与 Core Command 通信（更高效）
-  support-notifications:
-    Protocol: "http"
-    Host: "localhost"
-    Port: 59860             # Support Notifications 服务地址
 
 MessageBus:
   Disabled: false           # 是否禁用消息总线（false 表示启用）
@@ -45,9 +18,6 @@ Trigger:
   SubscribeTopics: "command/demo/+"  # 应用服务订阅的消息总线主题（支持 MQTT 通配符）
   PublishTopic: "command/demo/response" # 应用服务处理后发布的主题
 
-ApplicationSettings:        # 自定义应用层配置（可通过 SDK 读取）
-  DeviceNames: ""           # 设备名称过滤（留空表示不过滤）
-
 # ===============================
 # 自定义应用配置 (AppCustom)
 # ===============================
@@ -57,5 +27,6 @@ AppCustom:
   # -------------------------------
   Pipelines: 
     Enabled: true
-    Topics: ["command/demo/control"]
+    Topics: 
+      - "command/demo/control"
 
