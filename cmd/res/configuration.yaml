@@ -1,32 +1,46 @@
- # ===============================
-# EdgeX 应用服务基础配置
-# ===============================
 Writable:
-  LogLevel: "INFO"         # EdgeX系統日志级别: TRACE, DEBUG, INFO, WARN, ERROR
+  LogLevel: "DEBUG"
 
 Service:
-  Host: localhost           # 服务监听地址
-  Port: 59711               # 应用服务 HTTP API 端口
-  StartupMsg: "app-modbus-go Application Service has started"  # 启动日志消息
+  Host: localhost
+  Port: 59711
 
-MessageBus:
-  Disabled: false           # 是否禁用消息总线（false 表示启用）
-  BaseTopicPrefix: "v1"    # 自定义前缀  
-  Optional:
-    ClientId: "app-modbus-go"  # 消息总线客户端 ID（用于区分多个 App Service）
+# Node ID assigned by data center
+NodeID: "modbus-node-001"
 
-Trigger:  
-  SubscribeTopics: "data/+"  # 应用服务订阅的消息总线主题（支持 MQTT 通配符）
-  PublishTopic: "data/down" # 应用服务处理后发布的主题
+# MQTT Configuration
+Mqtt:
+  Broker: "tcp://localhost:1883"
+  ClientID: "app-modbus-go-001"
+  Username: ""
+  Password: ""
+  QoS: 1
+  KeepAlive: 60
+  Workers: 4
 
-# ===============================
-# 自定义应用配置 (AppCustom)
-# ===============================
-AppCustom:
-# -------------------------------
-  # 自定义数据处理流水线配置
-  # -------------------------------
-  Pipelines: 
-    Enabled: true
-    Topics: 
-      - "data/modbus"   # 订阅的主题列表，支持 MQTT 通配符
+# Modbus Configuration
+Modbus:
+  Type: "TCP"  # TCP or RTU
+  TCP:
+    Host: "0.0.0.0"
+    Port: 5020
+    SlaveID: 1
+  RTU:
+    Port: "/dev/ttyUSB0"
+    BaudRate: 9600
+    DataBits: 8
+    Parity: "N"
+    StopBits: 1
+    SlaveID: 1
+  Timeout: 1000      # milliseconds
+  PollingRate: 1000  # milliseconds
+
+# Cache Configuration
+Cache:
+  DefaultTTL: "30s"       # Data default expiration time
+  CleanupInterval: "5m"   # Cleanup expired data interval
+
+# Heartbeat Configuration
+Heartbeat:
+  Interval: "2m"   # Heartbeat interval
+  Timeout: "10s"   # Heartbeat timeout
