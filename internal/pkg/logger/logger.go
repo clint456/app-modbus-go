@@ -42,37 +42,6 @@ const (
 	ErrorLog = "ERROR"
 )
 
-// LoggingClient defines the interface for logging operations.
-type LoggingClient interface {
-	// SetLogLevel sets minimum severity log level. If a logging method is called with a lower level of severity than
-	// what is set, it will result in no output.
-	SetLogLevel(logLevel string) error
-	// LogLevel returns the current log level setting
-	LogLevel() string
-	// Debug logs a message at the DEBUG severity level
-	Debug(msg string, args ...interface{})
-	// Error logs a message at the ERROR severity level
-	Error(msg string, args ...interface{})
-	// Info logs a message at the INFO severity level
-	Info(msg string, args ...interface{})
-	// Trace logs a message at the TRACE severity level
-	Trace(msg string, args ...interface{})
-	// Warn logs a message at the WARN severity level
-	Warn(msg string, args ...interface{})
-	// Debugf logs a formatted message at the DEBUG severity level
-	Debugf(msg string, args ...interface{})
-	// Errorf logs a formatted message at the ERROR severity level
-	Errorf(msg string, args ...interface{})
-	// Infof logs a formatted message at the INFO severity level
-	Infof(msg string, args ...interface{})
-	// Tracef logs a formatted message at the TRACE severity level
-	Tracef(msg string, args ...interface{})
-	// Warnf logs a formatted message at the WARN severity level
-	Warnf(msg string, args ...interface{})
-	// Close closes any open file handles
-	Close() error
-}
-
 type edgeXLogger struct {
 	logLevel   string
 	writer     io.Writer

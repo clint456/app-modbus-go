@@ -15,7 +15,8 @@
 
 package logger
 
-type LoggerClient interface {
+// LoggingClient defines the interface for logging operations.
+type LoggingClient interface {
 	// SetLogLevel sets minimum severity log level. If a logging method is called with a lower level of severity than
 	// what is set, it will result in no output.
 	SetLogLevel(logLevel string) error
@@ -41,4 +42,6 @@ type LoggerClient interface {
 	Tracef(msg string, args ...interface{})
 	// Warnf logs a formatted message at the WARN severity level
 	Warnf(msg string, args ...interface{})
+	// Close closes any open file handles
+	Close() error
 }
