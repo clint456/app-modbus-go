@@ -12,4 +12,7 @@ docker run -d \
   linux/amd64/app-modbus-go:0.0.0-dev \
   /app-modbus-go \
   -cp=keeper.http://edgex-core-keeper:59890 \
-  --registry
+  --registry \
+  - -cd=/res  \
+  - -cf=configuration.yaml \
+  - -o

@@ -6,11 +6,11 @@ Service:
   Port: 59711
 
 # Node ID assigned by data center
-NodeID: "modbus-node-001"
+NodeID: "8bb29be95df21f65"
 
 # MQTT Configuration
 Mqtt:
-  Broker: "tcp://localhost:1883"
+  Broker: "tcp://172.16.19.91:1883"
   ClientID: "app-modbus-go-001"
   Username: ""
   Password: ""

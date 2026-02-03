@@ -1,4 +1,4 @@
-.PHONY: build test unittest lint clean docker vendor tidy
+.PHONY: build test unittest lint clean docker vendor tidy test-cover
 
 # 架构和平台配置
 GOARCH ?= $(shell go env GOARCH)
@@ -47,3 +47,7 @@ docker-amd64:
 
 clean:
 	rm -f $(MICROSERVICES)
+
+test-cover:
+	go test -coverprofile=coverage.out ./...
+	go tool cover -html=coverage.out -o coverage.html

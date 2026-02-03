@@ -1,0 +1,3137 @@
+
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+		<title>cmd: Go Coverage Report</title>
+		<style>
+			body {
+				background: black;
+				color: rgb(80, 80, 80);
+			}
+			body, pre, #legend span {
+				font-family: Menlo, monospace;
+				font-weight: bold;
+			}
+			#topbar {
+				background: black;
+				position: fixed;
+				top: 0; left: 0; right: 0;
+				height: 42px;
+				border-bottom: 1px solid rgb(80, 80, 80);
+			}
+			#content {
+				margin-top: 50px;
+			}
+			#nav, #legend {
+				float: left;
+				margin-left: 10px;
+			}
+			#legend {
+				margin-top: 12px;
+			}
+			#nav {
+				margin-top: 10px;
+			}
+			#legend span {
+				margin: 0 5px;
+			}
+			.cov0 { color: rgb(192, 0, 0) }
+.cov1 { color: rgb(128, 128, 128) }
+.cov2 { color: rgb(116, 140, 131) }
+.cov3 { color: rgb(104, 152, 134) }
+.cov4 { color: rgb(92, 164, 137) }
+.cov5 { color: rgb(80, 176, 140) }
+.cov6 { color: rgb(68, 188, 143) }
+.cov7 { color: rgb(56, 200, 146) }
+.cov8 { color: rgb(44, 212, 149) }
+.cov9 { color: rgb(32, 224, 152) }
+.cov10 { color: rgb(20, 236, 155) }
+
+		</style>
+	</head>
+	<body>
+		<div id="topbar">
+			<div id="nav">
+				<select id="files">
+				
+				<option value="file0">app-modbus-go/cmd/main.go (0.0%)</option>
+				
+				<option value="file1">app-modbus-go/internal/pkg/config/configuration.go (63.0%)</option>
+				
+				<option value="file2">app-modbus-go/internal/pkg/forwardlog/manager.go (47.7%)</option>
+				
+				<option value="file3">app-modbus-go/internal/pkg/logger/logger.go (78.8%)</option>
+				
+				<option value="file4">app-modbus-go/internal/pkg/mappingmanager/cache.go (100.0%)</option>
+				
+				<option value="file5">app-modbus-go/internal/pkg/mappingmanager/mappingmanager.go (68.1%)</option>
+				
+				<option value="file6">app-modbus-go/internal/pkg/modbusserver/converter.go (77.5%)</option>
+				
+				<option value="file7">app-modbus-go/internal/pkg/modbusserver/modbusserver.go (33.7%)</option>
+				
+				<option value="file8">app-modbus-go/internal/pkg/mqtt/client.go (34.9%)</option>
+				
+				<option value="file9">app-modbus-go/internal/pkg/mqtt/message.go (4.2%)</option>
+				
+				<option value="file10">app-modbus-go/internal/pkg/service/service.go (14.3%)</option>
+				
+				<option value="file11">app-modbus-go/internal/pkg/startup/bootstrap.go (0.0%)</option>
+				
+				</select>
+			</div>
+			<div id="legend">
+				<span>not tracked</span>
+			
+				<span class="cov0">not covered</span>
+				<span class="cov8">covered</span>
+			
+			</div>
+		</div>
+		<div id="content">
+		
+		<pre class="file" id="file0" style="display: none">package main
+
+import (
+        app "app-modbus-go"
+        "app-modbus-go/internal/pkg/startup"
+        "fmt"
+)
+
+const AppName = "app-modbus-go"
+
+func main() <span class="cov0" title="0">{
+        fmt.Printf("Starting application: %s with app instance: %+v\n", AppName, app.Version)
+        startup.BootStrap(AppName, app.Version)
+}</span>
+</pre>
+		
+		<pre class="file" id="file1" style="display: none">package config
+
+import (
+        "errors"
+        "fmt"
+        "os"
+        "time"
+
+        "gopkg.in/yaml.v3"
+)
+
+// ModbusTcpConfig holds Modbus TCP specific configuration
+type ModbusTcpConfig struct {
+        Host    string `yaml:"Host"`
+        Port    int    `yaml:"Port"`
+        SlaveID byte   `yaml:"SlaveID"`
+}
+
+// ModbusRtuConfig holds Modbus RTU specific configuration
+type ModbusRtuConfig struct {
+        Port     string `yaml:"Port"`
+        BaudRate int    `yaml:"BaudRate"`
+        DataBits int    `yaml:"DataBits"`
+        Parity   string `yaml:"Parity"`
+        StopBits int    `yaml:"StopBits"`
+        SlaveID  byte   `yaml:"SlaveID"`
+}
+
+// ModbusConfig holds all Modbus configuration
+type ModbusConfig struct {
+        Type        string          `yaml:"Type"` // "TCP" or "RTU"
+        TCP         ModbusTcpConfig `yaml:"TCP"`
+        RTU         ModbusRtuConfig `yaml:"RTU"`
+        Timeout     int             `yaml:"Timeout"`     // in milliseconds
+        PollingRate int             `yaml:"PollingRate"` // in milliseconds
+}
+
+// MqttConfig holds MQTT client configuration
+type MqttConfig struct {
+        Broker    string `yaml:"Broker"`
+        ClientID  string `yaml:"ClientID"`
+        Username  string `yaml:"Username"`
+        Password  string `yaml:"Password"`
+        QoS       int    `yaml:"QoS"`
+        KeepAlive int    `yaml:"KeepAlive"` // seconds
+        Workers   int    `yaml:"Workers"`
+}
+
+// CacheConfig holds cache configuration
+type CacheConfig struct {
+        DefaultTTL      string `yaml:"DefaultTTL"`      // e.g., "30s"
+        CleanupInterval string `yaml:"CleanupInterval"` // e.g., "5m"
+}
+
+// GetDefaultTTL returns the default TTL as time.Duration
+func (c *CacheConfig) GetDefaultTTL() time.Duration <span class="cov8" title="1">{
+        d, err := time.ParseDuration(c.DefaultTTL)
+        if err != nil </span><span class="cov8" title="1">{
+                return 30 * time.Second
+        }</span>
+        <span class="cov8" title="1">return d</span>
+}
+
+// GetCleanupInterval returns the cleanup interval as time.Duration
+func (c *CacheConfig) GetCleanupInterval() time.Duration <span class="cov8" title="1">{
+        d, err := time.ParseDuration(c.CleanupInterval)
+        if err != nil </span><span class="cov8" title="1">{
+                return 5 * time.Minute
+        }</span>
+        <span class="cov8" title="1">return d</span>
+}
+
+// HeartbeatConfig holds heartbeat configuration
+type HeartbeatConfig struct {
+        Interval string `yaml:"Interval"` // e.g., "2m"
+        Timeout  string `yaml:"Timeout"`  // e.g., "10s"
+}
+
+// GetInterval returns the heartbeat interval as time.Duration
+func (h *HeartbeatConfig) GetInterval() time.Duration <span class="cov8" title="1">{
+        d, err := time.ParseDuration(h.Interval)
+        if err != nil </span><span class="cov8" title="1">{
+                return 2 * time.Minute
+        }</span>
+        <span class="cov8" title="1">return d</span>
+}
+
+// GetTimeout returns the heartbeat timeout as time.Duration
+func (h *HeartbeatConfig) GetTimeout() time.Duration <span class="cov8" title="1">{
+        d, err := time.ParseDuration(h.Timeout)
+        if err != nil </span><span class="cov8" title="1">{
+                return 10 * time.Second
+        }</span>
+        <span class="cov8" title="1">return d</span>
+}
+
+// WritableConfig holds runtime-changeable configuration
+type WritableConfig struct {
+        LogLevel string `yaml:"LogLevel"`
+}
+
+// ServiceConfig holds service HTTP endpoint configuration
+type ServiceConfig struct {
+        Host string `yaml:"Host"`
+        Port int    `yaml:"Port"`
+}
+
+// AppConfig is the main configuration structure
+type AppConfig struct {
+        Writable  WritableConfig  `yaml:"Writable"`
+        Service   ServiceConfig   `yaml:"Service"`
+        NodeID    string          `yaml:"NodeID"`
+        Mqtt      MqttConfig      `yaml:"Mqtt"`
+        Modbus    ModbusConfig    `yaml:"Modbus"`
+        Cache     CacheConfig     `yaml:"Cache"`
+        Heartbeat HeartbeatConfig `yaml:"Heartbeat"`
+}
+
+// Validate validates the configuration
+func (c *AppConfig) Validate() error <span class="cov8" title="1">{
+        if c.NodeID == "" </span><span class="cov8" title="1">{
+                return errors.New("NodeID cannot be empty")
+        }</span>
+        <span class="cov8" title="1">if c.Mqtt.Broker == "" </span><span class="cov8" title="1">{
+                return errors.New("MQTT Broker cannot be empty")
+        }</span>
+        <span class="cov8" title="1">if c.Mqtt.ClientID == "" </span><span class="cov8" title="1">{
+                return errors.New("MQTT ClientID cannot be empty")
+        }</span>
+        <span class="cov8" title="1">if c.Mqtt.Workers &lt;= 0 </span><span class="cov8" title="1">{
+                c.Mqtt.Workers = 4 // default
+        }</span>
+        <span class="cov8" title="1">if c.Mqtt.QoS &lt; 0 || c.Mqtt.QoS &gt; 2 </span><span class="cov8" title="1">{
+                return errors.New("MQTT QoS must be 0, 1, or 2")
+        }</span>
+        <span class="cov8" title="1">if c.Mqtt.KeepAlive &lt;= 0 </span><span class="cov8" title="1">{
+                c.Mqtt.KeepAlive = 60 // default
+        }</span>
+
+        // Validate Modbus config based on type
+        <span class="cov8" title="1">switch c.Modbus.Type </span>{
+        case "TCP":<span class="cov0" title="0">
+                if c.Modbus.TCP.Host == "" </span><span class="cov0" title="0">{
+                        c.Modbus.TCP.Host = "0.0.0.0"
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.TCP.Port &lt;= 0 </span><span class="cov0" title="0">{
+                        c.Modbus.TCP.Port = 502
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.TCP.SlaveID == 0 </span><span class="cov0" title="0">{
+                        c.Modbus.TCP.SlaveID = 1
+                }</span>
+        case "RTU":<span class="cov0" title="0">
+                if c.Modbus.RTU.Port == "" </span><span class="cov0" title="0">{
+                        return errors.New("Modbus RTU Port cannot be empty")
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.RTU.BaudRate &lt;= 0 </span><span class="cov0" title="0">{
+                        c.Modbus.RTU.BaudRate = 9600
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.RTU.DataBits &lt;= 0 </span><span class="cov0" title="0">{
+                        c.Modbus.RTU.DataBits = 8
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.RTU.Parity == "" </span><span class="cov0" title="0">{
+                        c.Modbus.RTU.Parity = "N"
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.RTU.StopBits &lt;= 0 </span><span class="cov0" title="0">{
+                        c.Modbus.RTU.StopBits = 1
+                }</span>
+                <span class="cov0" title="0">if c.Modbus.RTU.SlaveID == 0 </span><span class="cov0" title="0">{
+                        c.Modbus.RTU.SlaveID = 1
+                }</span>
+        default:<span class="cov8" title="1">
+                c.Modbus.Type = "TCP"</span> // default to TCP
+        }
+
+        // Set defaults for cache and heartbeat
+        <span class="cov8" title="1">if c.Cache.DefaultTTL == "" </span><span class="cov8" title="1">{
+                c.Cache.DefaultTTL = "30s"
+        }</span>
+        <span class="cov8" title="1">if c.Cache.CleanupInterval == "" </span><span class="cov8" title="1">{
+                c.Cache.CleanupInterval = "5m"
+        }</span>
+        <span class="cov8" title="1">if c.Heartbeat.Interval == "" </span><span class="cov8" title="1">{
+                c.Heartbeat.Interval = "2m"
+        }</span>
+        <span class="cov8" title="1">if c.Heartbeat.Timeout == "" </span><span class="cov8" title="1">{
+                c.Heartbeat.Timeout = "10s"
+        }</span>
+
+        // Set defaults for writable
+        <span class="cov8" title="1">if c.Writable.LogLevel == "" </span><span class="cov8" title="1">{
+                c.Writable.LogLevel = "INFO"
+        }</span>
+
+        // Set defaults for service
+        <span class="cov8" title="1">if c.Service.Host == "" </span><span class="cov8" title="1">{
+                c.Service.Host = "localhost"
+        }</span>
+        <span class="cov8" title="1">if c.Service.Port &lt;= 0 </span><span class="cov8" title="1">{
+                c.Service.Port = 59711
+        }</span>
+
+        <span class="cov8" title="1">return nil</span>
+}
+
+// LoadConfig loads configuration from a YAML file
+func LoadConfig(path string) (*AppConfig, error) <span class="cov0" title="0">{
+        data, err := os.ReadFile(path)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to read config file: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">var config AppConfig
+        if err := yaml.Unmarshal(data, &amp;config); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse config file: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if err := config.Validate(); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("config validation failed: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return &amp;config, nil</span>
+}
+
+// DefaultConfig returns a default configuration
+func DefaultConfig() *AppConfig <span class="cov8" title="1">{
+        return &amp;AppConfig{
+                Writable: WritableConfig{
+                        LogLevel: "DEBUG",
+                },
+                Service: ServiceConfig{
+                        Host: "localhost",
+                        Port: 59711,
+                },
+                NodeID: "modbus-node-001",
+                Mqtt: MqttConfig{
+                        Broker:    "tcp://localhost:1883",
+                        ClientID:  "app-modbus-go-001",
+                        QoS:       1,
+                        KeepAlive: 60,
+                        Workers:   4,
+                },
+                Modbus: ModbusConfig{
+                        Type: "TCP",
+                        TCP: ModbusTcpConfig{
+                                Host:    "0.0.0.0",
+                                Port:    502,
+                                SlaveID: 1,
+                        },
+                },
+                Cache: CacheConfig{
+                        DefaultTTL:      "30s",
+                        CleanupInterval: "5m",
+                },
+                Heartbeat: HeartbeatConfig{
+                        Interval: "2m",
+                        Timeout:  "10s",
+                },
+        }
+}</span>
+</pre>
+		
+		<pre class="file" id="file2" style="display: none">package forwardlog
+
+import (
+        "app-modbus-go/internal/pkg/logger"
+        "app-modbus-go/internal/pkg/mqtt"
+        "sync"
+        "time"
+)
+
+// LogEntry represents a forward log entry
+type LogEntry struct {
+        Status          int
+        NorthDeviceName string
+        Data            map[string]interface{}
+        Timestamp       time.Time
+}
+
+// Manager manages forward log reporting with batching and retry
+type Manager struct {
+        mqttClient *mqtt.ClientManager
+        lc         logger.LoggingClient
+
+        queue      []*LogEntry
+        batchSize  int
+        flushDelay time.Duration
+        maxRetries int
+
+        mu      sync.Mutex
+        stopCh  chan struct{}
+        flushCh chan struct{}
+        doneCh  chan struct{}
+}
+
+// NewManager creates a new forward log manager
+func NewManager(mqttClient *mqtt.ClientManager, lc logger.LoggingClient) *Manager <span class="cov8" title="1">{
+        return &amp;Manager{
+                mqttClient: mqttClient,
+                lc:         lc,
+                queue:      make([]*LogEntry, 0),
+                batchSize:  10,
+                flushDelay: 5 * time.Second,
+                maxRetries: 3,
+                stopCh:     make(chan struct{}),
+                flushCh:    make(chan struct{}, 1),
+                doneCh:     make(chan struct{}),
+        }
+}</span>
+
+// Start starts the forward log manager
+func (m *Manager) Start() <span class="cov0" title="0">{
+        go m.run()
+        m.lc.Info("Forward log manager started")
+}</span>
+
+// Stop stops the forward log manager
+func (m *Manager) Stop() <span class="cov0" title="0">{
+        close(m.stopCh)
+        &lt;-m.doneCh
+        m.lc.Info("Forward log manager stopped")
+}</span>
+
+// LogSuccess logs a successful data forward
+func (m *Manager) LogSuccess(northDeviceName string, data map[string]interface{}) <span class="cov8" title="1">{
+        m.addEntry(1, northDeviceName, data)
+}</span>
+
+// LogFailure logs a failed data forward
+func (m *Manager) LogFailure(northDeviceName string, data map[string]interface{}) <span class="cov8" title="1">{
+        m.addEntry(0, northDeviceName, data)
+}</span>
+
+func (m *Manager) addEntry(status int, northDeviceName string, data map[string]interface{}) <span class="cov8" title="1">{
+        entry := &amp;LogEntry{
+                Status:          status,
+                NorthDeviceName: northDeviceName,
+                Data:            data,
+                Timestamp:       time.Now(),
+        }
+
+        m.mu.Lock()
+        m.queue = append(m.queue, entry)
+        shouldFlush := len(m.queue) &gt;= m.batchSize
+        m.mu.Unlock()
+
+        if shouldFlush </span><span class="cov8" title="1">{
+                select </span>{
+                case m.flushCh &lt;- struct{}{}:<span class="cov8" title="1"></span>
+                default:<span class="cov8" title="1"></span>
+                }
+        }
+}
+
+func (m *Manager) run() <span class="cov0" title="0">{
+        defer close(m.doneCh)
+
+        ticker := time.NewTicker(m.flushDelay)
+        defer ticker.Stop()
+
+        for </span><span class="cov0" title="0">{
+                select </span>{
+                case &lt;-m.stopCh:<span class="cov0" title="0">
+                        m.flush()
+                        return</span>
+                case &lt;-ticker.C:<span class="cov0" title="0">
+                        m.flush()</span>
+                case &lt;-m.flushCh:<span class="cov0" title="0">
+                        m.flush()</span>
+                }
+        }
+}
+
+func (m *Manager) flush() <span class="cov8" title="1">{
+        m.mu.Lock()
+        if len(m.queue) == 0 </span><span class="cov8" title="1">{
+                m.mu.Unlock()
+                return
+        }</span>
+        <span class="cov8" title="1">entries := m.queue
+        m.queue = make([]*LogEntry, 0)
+        m.mu.Unlock()
+
+        for _, entry := range entries </span><span class="cov8" title="1">{
+                m.sendLogEntry(entry)
+        }</span>
+}
+
+func (m *Manager) sendLogEntry(entry *LogEntry) <span class="cov8" title="1">{
+        // Skip sending if mqttClient is nil (for testing)
+        if m.mqttClient == nil </span><span class="cov8" title="1">{
+                return
+        }</span>
+
+        <span class="cov0" title="0">payload := &amp;mqtt.ForwardLogPayload{
+                Status:          entry.Status,
+                NorthDeviceName: entry.NorthDeviceName,
+                Data:            entry.Data,
+        }
+        msg := mqtt.NewMessage(mqtt.TypeForwardLog, payload)
+
+        for attempt := 0; attempt &lt; m.maxRetries; attempt++ </span><span class="cov0" title="0">{
+                if err := m.mqttClient.Publish(msg); err != nil </span><span class="cov0" title="0">{
+                        m.lc.Warn("Failed to send forward log (attempt %d): %s", attempt+1, err.Error())
+                        time.Sleep(time.Second * time.Duration(attempt+1))
+                        continue</span>
+                }
+                <span class="cov0" title="0">return</span>
+        }
+        <span class="cov0" title="0">m.lc.Error("Failed to send forward log after %d attempts", m.maxRetries)</span>
+}
+</pre>
+		
+		<pre class="file" id="file3" style="display: none">/*******************************************************************************
+ * Copyright 2019 Dell Inc.
+ * Copyright (C) 2025 IOTech Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *******************************************************************************/
+
+/*
+Package logger provides a client for integration with the support-logging service. The client can also be configured
+to write logs to a local file rather than sending them to a service.
+*/
+package logger
+
+// Logging client for the Go implementation of edgexfoundry
+
+import (
+        "fmt"
+        "io"
+        stdLog "log"
+        "os"
+        "path/filepath"
+        "runtime"
+        "strings"
+        "sync"
+        "time"
+)
+
+// 定义本地日志级别常量，避免外部依赖
+const (
+        TraceLog = "TRACE"
+        DebugLog = "DEBUG"
+        InfoLog  = "INFO"
+        WarnLog  = "WARN"
+        ErrorLog = "ERROR"
+)
+
+type edgeXLogger struct {
+        logLevel   string
+        writer     io.Writer
+        mu         sync.RWMutex // 保护 logLevel
+        fileHandle *os.File     // 文件句柄
+        filePath   string       // 日志文件路径
+}
+
+// LoggerConfig holds configuration for logger creation
+type LoggerConfig struct {
+        LogLevel      string // Log level (TRACE, DEBUG, INFO, WARN, ERROR)
+        FilePath      string // Path to log file (empty for stdout only)
+        FileMaxSizeMB int    // Maximum file size in MB before rotation (0 = no rotation)
+        EnableConsole bool   // Whether to also output to console
+}
+
+// NewClient creates an instance of LoggingClient with default settings (stdout only)
+func NewClient(logLevel string) LoggingClient <span class="cov8" title="1">{
+        return NewClientWithConfig(LoggerConfig{
+                LogLevel:      logLevel,
+                EnableConsole: true,
+        })
+}</span>
+
+// NewClientWithFile creates an instance of LoggingClient that writes to both console and file
+func NewClientWithFile(logLevel string, filePath string) (LoggingClient, error) <span class="cov0" title="0">{
+        return NewClientWithConfig(LoggerConfig{
+                LogLevel:      logLevel,
+                FilePath:      filePath,
+                EnableConsole: true,
+        }), nil
+}</span>
+
+// NewClientWithConfig creates an instance of LoggingClient with custom configuration
+func NewClientWithConfig(config LoggerConfig) LoggingClient <span class="cov8" title="1">{
+        upper := strings.ToUpper(config.LogLevel)
+        if !isValidLogLevel(upper) </span><span class="cov8" title="1">{
+                upper = InfoLog
+        }</span>
+
+        <span class="cov8" title="1">logger := &amp;edgeXLogger{
+                logLevel: upper,
+                filePath: config.FilePath,
+        }
+
+        var writers []io.Writer
+
+        // 添加控制台输出
+        if config.EnableConsole </span><span class="cov8" title="1">{
+                writers = append(writers, os.Stdout)
+        }</span>
+
+        // 添加文件输出
+        <span class="cov8" title="1">if config.FilePath != "" </span><span class="cov0" title="0">{
+                // 确保目录存在
+                dir := filepath.Dir(config.FilePath)
+                if err := os.MkdirAll(dir, 0755); err != nil </span><span class="cov0" title="0">{
+                        stdLog.Printf("Failed to create log directory %s: %v", dir, err)
+                }</span> else<span class="cov0" title="0"> {
+                        // 打开文件（追加模式）
+                        file, err := os.OpenFile(config.FilePath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
+                        if err != nil </span><span class="cov0" title="0">{
+                                stdLog.Printf("Failed to open log file %s: %v", config.FilePath, err)
+                        }</span> else<span class="cov0" title="0"> {
+                                logger.fileHandle = file
+                                writers = append(writers, file)
+                        }</span>
+                }
+        }
+
+        // 使用 MultiWriter 同时写入多个目标
+        <span class="cov8" title="1">if len(writers) == 0 </span><span class="cov8" title="1">{
+                // 如果没有任何writer，至少使用stdout
+                logger.writer = os.Stdout
+        }</span> else<span class="cov8" title="1"> if len(writers) == 1 </span><span class="cov8" title="1">{
+                logger.writer = writers[0]
+        }</span> else<span class="cov0" title="0"> {
+                logger.writer = io.MultiWriter(writers...)
+        }</span>
+
+        <span class="cov8" title="1">return logger</span>
+}
+
+// Close closes the log file if one is open
+func (l *edgeXLogger) Close() error <span class="cov0" title="0">{
+        if l.fileHandle != nil </span><span class="cov0" title="0">{
+                err := l.fileHandle.Close()
+                l.fileHandle = nil
+                return err
+        }</span>
+        <span class="cov0" title="0">return nil</span>
+}
+
+// LogLevels returns an array of the possible log levels in order from most to least verbose.
+func logLevels() []string <span class="cov8" title="1">{ // 不带图标，仅用于比较
+        return []string{TraceLog, DebugLog, InfoLog, WarnLog, ErrorLog}
+}</span>
+
+func isValidLogLevel(l string) bool <span class="cov8" title="1">{
+        l = strings.ToUpper(l)
+        for _, name := range logLevels() </span><span class="cov8" title="1">{
+                if name == l </span><span class="cov8" title="1">{
+                        return true
+                }</span>
+        }
+        <span class="cov8" title="1">return false</span>
+}
+
+var logLevelIconMap = map[string]string{
+        TraceLog: "🟣",
+        DebugLog: "🟦",
+        InfoLog:  "🟩",
+        WarnLog:  "🟨",
+        ErrorLog: "🟥",
+}
+
+// level precedence for filtering
+var levelOrder = map[string]int{
+        TraceLog: 0,
+        DebugLog: 1,
+        InfoLog:  2,
+        WarnLog:  3,
+        ErrorLog: 4,
+}
+
+func (l *edgeXLogger) currentLevel() string <span class="cov8" title="1">{
+        l.mu.RLock()
+        defer l.mu.RUnlock()
+        return l.logLevel
+}</span>
+
+func (l *edgeXLogger) enabled(target string) bool <span class="cov8" title="1">{
+        cur := l.currentLevel()
+        return levelOrder[target] &gt;= levelOrder[cur]
+}</span>
+
+func caller(skip int) string <span class="cov8" title="1">{
+        // 跳过若干层调用，获得文件:行号
+        if _, file, line, ok := runtime.Caller(skip); ok </span><span class="cov8" title="1">{
+                // 截断文件路径到最后两级
+                parts := strings.Split(file, "/")
+                if len(parts) &gt; 2 </span><span class="cov8" title="1">{
+                        file = strings.Join(parts[len(parts)-2:], "/")
+                }</span>
+                <span class="cov8" title="1">return fmt.Sprintf("%s:%d", file, line)</span>
+        }
+        <span class="cov0" title="0">return "?? ?"</span>
+}
+
+func (l *edgeXLogger) output(level string, formatted bool, msg string, args ...interface{}) <span class="cov8" title="1">{
+        if !isValidLogLevel(level) </span><span class="cov0" title="0">{ // 非法级别直接忽略
+                return
+        }</span>
+        <span class="cov8" title="1">if !l.enabled(level) </span><span class="cov8" title="1">{ // 级别过滤
+                return
+        }</span>
+
+        // 固定宽度与布局常量
+        <span class="cov8" title="1">const (
+                levelWidth  = 5                               // TRACE/DEBUG/INFO/WARN/ERROR 最长5
+                sourceWidth = 30                              // 可按需要调整，过长截断左侧
+                timeLayout  = "2006-01-02 15:04:05.000000000" // 固定长度时间
+        )
+
+        icon := logLevelIconMap[level]
+        ts := time.Now().Format(timeLayout)
+        src := caller(4)
+        // 截断 source 只保留末尾
+        if len(src) &gt; sourceWidth </span><span class="cov0" title="0">{
+                src = src[len(src)-sourceWidth:]
+        }</span>
+
+        <span class="cov8" title="1">renderedMsg := msg
+        var extraKVs []string
+        if formatted </span><span class="cov8" title="1">{
+                renderedMsg = fmt.Sprintf(msg, args...)
+        }</span> else<span class="cov8" title="1"> if len(args) &gt; 0 </span><span class="cov8" title="1">{
+                if len(args)%2 == 1 </span><span class="cov0" title="0">{
+                        args = append(args, "")
+                }</span>
+                <span class="cov8" title="1">for i := 0; i &lt; len(args); i += 2 </span><span class="cov8" title="1">{
+                        k := fmt.Sprintf("%v", args[i])
+                        v := fmt.Sprintf("%v", args[i+1])
+                        if k == "level" || k == "ts" || k == "source" || k == "msg" </span><span class="cov0" title="0">{
+                                k = "extra_" + k
+                        }</span>
+                        <span class="cov8" title="1">v = strings.ReplaceAll(v, "\"", "'")
+                        extraKVs = append(extraKVs, fmt.Sprintf("%s=%s", k, v))</span>
+                }
+        }
+
+        // 构造对齐行：示例  🟩 [INFO ] [ts=2025-10-15 04:29:02.123456789] (source=negotiation/secretkey.go:192   ) msg="..."
+        // level 方括号内固定宽度；source 括号内固定宽度左对齐填空格
+        <span class="cov8" title="1">levelField := fmt.Sprintf("[%-*s]", levelWidth, level)
+        tsField := fmt.Sprintf("[ts=%s]", ts)
+        sourceField := fmt.Sprintf("(source=%-*s)", sourceWidth, src)
+        // 替换消息中的双引号
+        safeMsg := strings.ReplaceAll(renderedMsg, "\"", "'")
+        line := fmt.Sprintf("%s %s %s %s msg=\"%s\"", icon, levelField, tsField, sourceField, safeMsg)
+        if len(extraKVs) &gt; 0 </span><span class="cov8" title="1">{
+                line = line + " " + strings.Join(extraKVs, " ")
+        }</span>
+        <span class="cov8" title="1">line += "\n"
+        if _, err := io.WriteString(l.writer, line); err != nil </span><span class="cov0" title="0">{
+                stdLog.Printf("logger write error: %v", err)
+        }</span>
+}
+
+// 兼容旧接口内部调用
+func (lc *edgeXLogger) log(level string, formatted bool, msg string, args ...interface{}) <span class="cov8" title="1">{
+        lc.output(level, formatted, msg, args...)
+}</span>
+
+func (lc *edgeXLogger) SetLogLevel(logLevel string) error <span class="cov8" title="1">{
+        upper := strings.ToUpper(logLevel)
+        if !isValidLogLevel(upper) </span><span class="cov8" title="1">{
+                return fmt.Errorf("invalid log level `%s`", logLevel)
+        }</span>
+        <span class="cov8" title="1">lc.mu.Lock()
+        lc.logLevel = upper
+        lc.mu.Unlock()
+        return nil</span>
+}
+
+func (lc *edgeXLogger) LogLevel() string <span class="cov8" title="1">{ return lc.currentLevel() }</span>
+
+func (lc *edgeXLogger) Info(msg string, args ...interface{})  <span class="cov8" title="1">{ lc.log(InfoLog, false, msg, args...) }</span>
+func (lc *edgeXLogger) Trace(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(TraceLog, false, msg, args...) }</span>
+func (lc *edgeXLogger) Debug(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(DebugLog, false, msg, args...) }</span>
+func (lc *edgeXLogger) Warn(msg string, args ...interface{})  <span class="cov8" title="1">{ lc.log(WarnLog, false, msg, args...) }</span>
+func (lc *edgeXLogger) Error(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(ErrorLog, false, msg, args...) }</span>
+
+func (lc *edgeXLogger) Infof(msg string, args ...interface{})  <span class="cov8" title="1">{ lc.log(InfoLog, true, msg, args...) }</span>
+func (lc *edgeXLogger) Tracef(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(TraceLog, true, msg, args...) }</span>
+func (lc *edgeXLogger) Debugf(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(DebugLog, true, msg, args...) }</span>
+func (lc *edgeXLogger) Warnf(msg string, args ...interface{})  <span class="cov8" title="1">{ lc.log(WarnLog, true, msg, args...) }</span>
+func (lc *edgeXLogger) Errorf(msg string, args ...interface{}) <span class="cov8" title="1">{ lc.log(ErrorLog, true, msg, args...) }</span>
+</pre>
+		
+		<pre class="file" id="file4" style="display: none">package mappingmanager
+
+import (
+        "sync"
+        "time"
+)
+
+// CachedData represents cached data with TTL
+type CachedData struct {
+        Value         interface{} // The raw value
+        Timestamp     time.Time   // When the data was cached
+        TTL           time.Duration
+        NorthDevName  string // North device name
+        ResourceName  string // Resource name
+        ValueType     string // Data type (int16, float32, etc.)
+        Scale         float64
+        Offset        float64
+        ModbusAddress uint16 // Modbus register address
+}
+
+// IsExpired checks if the cached data has expired
+func (c *CachedData) IsExpired() bool <span class="cov8" title="1">{
+        return time.Since(c.Timestamp) &gt; c.TTL
+}</span>
+
+// Cache provides thread-safe cache operations
+type Cache struct {
+        data       map[uint16]*CachedData
+        mu         sync.RWMutex
+        defaultTTL time.Duration
+        stopCh     chan struct{}
+}
+
+// NewCache creates a new cache instance
+func NewCache(defaultTTL time.Duration) *Cache <span class="cov8" title="1">{
+        return &amp;Cache{
+                data:       make(map[uint16]*CachedData),
+                defaultTTL: defaultTTL,
+                stopCh:     make(chan struct{}),
+        }
+}</span>
+
+// Set stores a value in the cache
+func (c *Cache) Set(addr uint16, data *CachedData) <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        if data.TTL == 0 </span><span class="cov8" title="1">{
+                data.TTL = c.defaultTTL
+        }</span>
+        <span class="cov8" title="1">data.Timestamp = time.Now()
+        c.data[addr] = data</span>
+}
+
+// Get retrieves a value from the cache
+func (c *Cache) Get(addr uint16) (*CachedData, bool) <span class="cov8" title="1">{
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+        data, ok := c.data[addr]
+        if !ok </span><span class="cov8" title="1">{
+                return nil, false
+        }</span>
+        <span class="cov8" title="1">if data.IsExpired() </span><span class="cov8" title="1">{
+                return nil, false
+        }</span>
+        <span class="cov8" title="1">return data, true</span>
+}
+
+// GetRange retrieves multiple consecutive values from the cache
+func (c *Cache) GetRange(startAddr uint16, quantity uint16) ([]*CachedData, error) <span class="cov8" title="1">{
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+
+        result := make([]*CachedData, quantity)
+        for i := uint16(0); i &lt; quantity; i++ </span><span class="cov8" title="1">{
+                addr := startAddr + i
+                data, ok := c.data[addr]
+                if ok &amp;&amp; !data.IsExpired() </span><span class="cov8" title="1">{
+                        result[i] = data
+                }</span> else<span class="cov8" title="1"> {
+                        result[i] = nil // No data for this address
+                }</span>
+        }
+        <span class="cov8" title="1">return result, nil</span>
+}
+
+// Delete removes a value from the cache
+func (c *Cache) Delete(addr uint16) <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        delete(c.data, addr)
+}</span>
+
+// Clear removes all values from the cache
+func (c *Cache) Clear() <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+        c.data = make(map[uint16]*CachedData)
+}</span>
+
+// Cleanup removes expired entries from the cache
+func (c *Cache) Cleanup() int <span class="cov8" title="1">{
+        c.mu.Lock()
+        defer c.mu.Unlock()
+
+        count := 0
+        for addr, data := range c.data </span><span class="cov8" title="1">{
+                if data.IsExpired() </span><span class="cov8" title="1">{
+                        delete(c.data, addr)
+                        count++
+                }</span>
+        }
+        <span class="cov8" title="1">return count</span>
+}
+
+// StartPeriodicCleanup starts a goroutine that periodically cleans up expired entries
+func (c *Cache) StartPeriodicCleanup(interval time.Duration, callback func(int)) <span class="cov8" title="1">{
+        go func() </span><span class="cov8" title="1">{
+                ticker := time.NewTicker(interval)
+                defer ticker.Stop()
+
+                for </span><span class="cov8" title="1">{
+                        select </span>{
+                        case &lt;-ticker.C:<span class="cov8" title="1">
+                                count := c.Cleanup()
+                                if callback != nil &amp;&amp; count &gt; 0 </span><span class="cov8" title="1">{
+                                        callback(count)
+                                }</span>
+                        case &lt;-c.stopCh:<span class="cov8" title="1">
+                                return</span>
+                        }
+                }
+        }()
+}
+
+// Stop stops the periodic cleanup goroutine
+func (c *Cache) Stop() <span class="cov8" title="1">{
+        close(c.stopCh)
+}</span>
+
+// Size returns the number of items in the cache
+func (c *Cache) Size() int <span class="cov8" title="1">{
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+        return len(c.data)
+}</span>
+
+// GetAll returns all cached data (including expired)
+func (c *Cache) GetAll() map[uint16]*CachedData <span class="cov8" title="1">{
+        c.mu.RLock()
+        defer c.mu.RUnlock()
+
+        result := make(map[uint16]*CachedData, len(c.data))
+        for k, v := range c.data </span><span class="cov8" title="1">{
+                result[k] = v
+        }</span>
+        <span class="cov8" title="1">return result</span>
+}
+</pre>
+		
+		<pre class="file" id="file5" style="display: none">package mappingmanager
+
+import (
+        "app-modbus-go/internal/pkg/config"
+        "app-modbus-go/internal/pkg/logger"
+        "app-modbus-go/internal/pkg/mqtt"
+        "fmt"
+        "sync"
+        "time"
+)
+
+// ForwardLogHandler defines the interface for forward log handling
+type ForwardLogHandler interface {
+        LogSuccess(northDeviceName string, data map[string]interface{})
+        LogFailure(northDeviceName string, data map[string]interface{})
+}
+
+// MappingManager manages device-to-Modbus address mappings and data cache
+type MappingManager struct {
+        // Device mappings indexed by north device name
+        deviceMappings map[string]*mqtt.DeviceMapping
+
+        // Resource mappings indexed by Modbus address
+        addressMappings map[uint16]*addressIndex
+
+        // Data cache
+        cache *Cache
+
+        mqttClient      *mqtt.ClientManager
+        forwardLogHandler ForwardLogHandler
+        lc              logger.LoggingClient
+        config          *config.CacheConfig
+        mu              sync.RWMutex
+}
+
+// addressIndex maps a Modbus address to its resource mapping and device name
+type addressIndex struct {
+        DeviceName      string
+        ResourceMapping *mqtt.ResourceMapping
+}
+
+// NewMappingManager creates a new MappingManager
+func NewMappingManager(mqttClient *mqtt.ClientManager, lc logger.LoggingClient, cacheConfig *config.CacheConfig) *MappingManager <span class="cov8" title="1">{
+        return &amp;MappingManager{
+                deviceMappings:  make(map[string]*mqtt.DeviceMapping),
+                addressMappings: make(map[uint16]*addressIndex),
+                cache:           NewCache(cacheConfig.GetDefaultTTL()),
+                mqttClient:      mqttClient,
+                forwardLogHandler: nil, // Optional, can be set later
+                lc:              lc,
+                config:          cacheConfig,
+        }
+}</span>
+
+// SetForwardLogHandler sets the forward log handler
+func (m *MappingManager) SetForwardLogHandler(handler ForwardLogHandler) <span class="cov8" title="1">{
+        m.mu.Lock()
+        defer m.mu.Unlock()
+        m.forwardLogHandler = handler
+}</span>
+
+// QueryDeviceAttributes sends a type=2 query to data center and waits for response
+func (m *MappingManager) QueryDeviceAttributes() error <span class="cov0" title="0">{
+        m.lc.Info("Querying device attributes from data center...")
+
+        payload := &amp;mqtt.QueryDevicePayload{Cmd: "0101"}
+        msg := mqtt.NewMessage(mqtt.TypeQueryDevice, payload)
+
+        resp, err := m.mqttClient.PublishAndWait(msg, 30*time.Second)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("query device attributes failed: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">if resp.Code != 200 </span><span class="cov0" title="0">{
+                return fmt.Errorf("query device attributes returned code %d: %s", resp.Code, resp.Msg)
+        }</span>
+
+        <span class="cov0" title="0">return m.HandleQueryResponse(resp)</span>
+}
+
+// HandleQueryResponse processes query device response (type=2)
+func (m *MappingManager) HandleQueryResponse(resp *mqtt.MQTTResponse) error <span class="cov0" title="0">{
+        qdr, err := resp.GetQueryDeviceResponse()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to parse query device response: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">m.lc.Info(fmt.Sprintf("Received device attributes: %d devices", len(qdr.Result)))
+        return m.UpdateMappings(qdr.Result)</span>
+}
+
+// HandleAttributeUpdate processes device attribute push (type=3)
+func (m *MappingManager) HandleAttributeUpdate(msg *mqtt.MQTTMessage) error <span class="cov0" title="0">{
+        payload, err := msg.GetDeviceAttributePushPayload()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to parse attribute update: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">m.lc.Info(fmt.Sprintf("Received device attribute update: %d devices", len(payload.Devices)))
+        return m.UpdateMappings(payload.Devices)</span>
+}
+
+// UpdateMappings updates the device-to-Modbus mappings with validation
+func (m *MappingManager) UpdateMappings(mappings []*mqtt.DeviceMapping) error <span class="cov8" title="1">{
+        m.mu.Lock()
+        defer m.mu.Unlock()
+
+        // Clear existing mappings
+        m.deviceMappings = make(map[string]*mqtt.DeviceMapping)
+        newAddressMappings := make(map[uint16]*addressIndex)
+
+        for _, dm := range mappings </span><span class="cov8" title="1">{
+                m.deviceMappings[dm.NorthDeviceName] = dm
+
+                for _, rm := range dm.Resources </span><span class="cov8" title="1">{
+                        if rm.NorthResource != nil </span><span class="cov8" title="1">{
+                                addr := rm.NorthResource.OtherParameters.Modbus.Address
+
+                                // Check for duplicate address mapping
+                                if existing, ok := newAddressMappings[addr]; ok </span><span class="cov8" title="1">{
+                                        m.lc.Warn(fmt.Sprintf("Duplicate Modbus address %d detected: %s/%s conflicts with %s/%s",
+                                                addr, dm.NorthDeviceName, rm.NorthResource.Name,
+                                                existing.DeviceName, existing.ResourceMapping.NorthResource.Name))
+                                }</span>
+
+                                <span class="cov8" title="1">newAddressMappings[addr] = &amp;addressIndex{
+                                        DeviceName:      dm.NorthDeviceName,
+                                        ResourceMapping: rm,
+                                }
+                                m.lc.Debug(fmt.Sprintf("Mapped address %d -&gt; %s/%s",
+                                        addr, dm.NorthDeviceName, rm.NorthResource.Name))</span>
+                        }
+                }
+        }
+
+        <span class="cov8" title="1">m.addressMappings = newAddressMappings
+        m.lc.Info(fmt.Sprintf("Updated mappings: %d devices, %d addresses",
+                len(m.deviceMappings), len(m.addressMappings)))
+        return nil</span>
+}
+
+// GetMappingByAddress returns the resource mapping for a Modbus address
+func (m *MappingManager) GetMappingByAddress(addr uint16) (*mqtt.ResourceMapping, bool) <span class="cov8" title="1">{
+        m.mu.RLock()
+        defer m.mu.RUnlock()
+
+        idx, ok := m.addressMappings[addr]
+        if !ok </span><span class="cov8" title="1">{
+                return nil, false
+        }</span>
+        <span class="cov8" title="1">return idx.ResourceMapping, true</span>
+}
+
+// GetDeviceMapping returns the device mapping by north device name
+func (m *MappingManager) GetDeviceMapping(northDeviceName string) (*mqtt.DeviceMapping, bool) <span class="cov8" title="1">{
+        m.mu.RLock()
+        defer m.mu.RUnlock()
+
+        dm, ok := m.deviceMappings[northDeviceName]
+        return dm, ok
+}</span>
+
+// UpdateCache updates the data cache from sensor data
+func (m *MappingManager) UpdateCache(northDevName string, data map[string]interface{}) error <span class="cov8" title="1">{
+        m.mu.RLock()
+        dm, ok := m.deviceMappings[northDevName]
+        m.mu.RUnlock()
+
+        if !ok </span><span class="cov8" title="1">{
+                return fmt.Errorf("unknown north device: %s", northDevName)
+        }</span>
+
+        <span class="cov8" title="1">updatedCount := 0
+        for _, rm := range dm.Resources </span><span class="cov8" title="1">{
+                if rm.NorthResource == nil || rm.SouthResource == nil </span><span class="cov0" title="0">{
+                        continue</span>
+                }
+
+                // Try to find the value by south resource name
+                <span class="cov8" title="1">val, ok := data[rm.SouthResource.Name]
+                if !ok </span><span class="cov0" title="0">{
+                        // Also try north resource name
+                        val, ok = data[rm.NorthResource.Name]
+                        if !ok </span><span class="cov0" title="0">{
+                                continue</span>
+                        }
+                }
+
+                <span class="cov8" title="1">addr := rm.NorthResource.OtherParameters.Modbus.Address
+                m.cache.Set(addr, &amp;CachedData{
+                        Value:         val,
+                        NorthDevName:  northDevName,
+                        ResourceName:  rm.NorthResource.Name,
+                        ValueType:     rm.NorthResource.ValueType,
+                        Scale:         rm.NorthResource.Scale,
+                        Offset:        rm.NorthResource.OffsetValue,
+                        ModbusAddress: addr,
+                })
+                updatedCount++</span>
+        }
+
+        <span class="cov8" title="1">m.lc.Debug(fmt.Sprintf("Updated cache for device %s: %d values", northDevName, updatedCount))
+        return nil</span>
+}
+
+// GetCachedValue returns the cached value for a Modbus address
+func (m *MappingManager) GetCachedValue(addr uint16) (*CachedData, bool) <span class="cov8" title="1">{
+        return m.cache.Get(addr)
+}</span>
+
+// GetCachedRegisters reads multiple consecutive registers
+func (m *MappingManager) GetCachedRegisters(startAddr uint16, quantity uint16) ([]*CachedData, error) <span class="cov0" title="0">{
+        return m.cache.GetRange(startAddr, quantity)
+}</span>
+
+// HandleSensorData processes incoming sensor data (type=4)
+func (m *MappingManager) HandleSensorData(msg *mqtt.MQTTMessage) error <span class="cov8" title="1">{
+        payload, err := msg.GetSensorDataPayload()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to parse sensor data: %w", err)
+        }</span>
+
+        <span class="cov8" title="1">m.lc.Debug(fmt.Sprintf("Received sensor data from device: %s", payload.NorthDeviceName))
+
+        if err := m.UpdateCache(payload.NorthDeviceName, payload.Data); err != nil </span><span class="cov8" title="1">{
+                // Log failure if handler is available
+                m.mu.RLock()
+                handler := m.forwardLogHandler
+                m.mu.RUnlock()
+                if handler != nil </span><span class="cov8" title="1">{
+                        handler.LogFailure(payload.NorthDeviceName, payload.Data)
+                }</span>
+                <span class="cov8" title="1">return err</span>
+        }
+
+        // Log success if handler is available
+        <span class="cov8" title="1">m.mu.RLock()
+        handler := m.forwardLogHandler
+        m.mu.RUnlock()
+        if handler != nil </span><span class="cov8" title="1">{
+                handler.LogSuccess(payload.NorthDeviceName, payload.Data)
+        }</span>
+        <span class="cov8" title="1">return nil</span>
+}
+
+// StartCleanup starts periodic cache cleanup
+func (m *MappingManager) StartCleanup() <span class="cov0" title="0">{
+        m.cache.StartPeriodicCleanup(m.config.GetCleanupInterval(), func(count int) </span><span class="cov0" title="0">{
+                m.lc.Debug(fmt.Sprintf("Cache cleanup: removed %d expired entries", count))
+        }</span>)
+        <span class="cov0" title="0">m.lc.Info("Cache cleanup started")</span>
+}
+
+// Stop stops the mapping manager
+func (m *MappingManager) Stop() <span class="cov0" title="0">{
+        m.cache.Stop()
+}</span>
+</pre>
+		
+		<pre class="file" id="file6" style="display: none">package modbusserver
+
+import (
+        "encoding/binary"
+        "fmt"
+        "math"
+)
+
+// ByteOrder defines the byte ordering for multi-byte values
+type ByteOrder int
+
+const (
+        BigEndian ByteOrder = iota
+        LittleEndian
+)
+
+// Converter handles data type conversions between Go types and Modbus registers
+type Converter struct {
+        byteOrder ByteOrder
+}
+
+// NewConverter creates a new converter with the specified byte order
+func NewConverter(order ByteOrder) *Converter <span class="cov8" title="1">{
+        return &amp;Converter{byteOrder: order}
+}</span>
+
+// ToRegisters converts a value to Modbus register bytes based on value type
+func (c *Converter) ToRegisters(value interface{}, valueType string, scale, offset float64) ([]byte, error) <span class="cov8" title="1">{
+        // Apply scale and offset to numeric values
+        scaledValue := c.applyScaleOffset(value, scale, offset)
+
+        switch valueType </span>{
+        case "bool":<span class="cov8" title="1">
+                return c.boolToBytes(scaledValue)</span>
+        case "int16":<span class="cov8" title="1">
+                return c.int16ToBytes(scaledValue)</span>
+        case "uint16":<span class="cov8" title="1">
+                return c.uint16ToBytes(scaledValue)</span>
+        case "int32":<span class="cov8" title="1">
+                return c.int32ToBytes(scaledValue)</span>
+        case "uint32":<span class="cov8" title="1">
+                return c.uint32ToBytes(scaledValue)</span>
+        case "float32":<span class="cov8" title="1">
+                return c.float32ToBytes(scaledValue)</span>
+        case "float64":<span class="cov8" title="1">
+                return c.float64ToBytes(scaledValue)</span>
+        case "int64":<span class="cov8" title="1">
+                return c.int64ToBytes(scaledValue)</span>
+        case "uint64":<span class="cov8" title="1">
+                return c.uint64ToBytes(scaledValue)</span>
+        default:<span class="cov8" title="1">
+                // Default to uint16
+                return c.uint16ToBytes(scaledValue)</span>
+        }
+}
+
+// GetRegisterCount returns the number of registers needed for a value type
+func (c *Converter) GetRegisterCount(valueType string) int <span class="cov8" title="1">{
+        switch valueType </span>{
+        case "bool", "int16", "uint16":<span class="cov8" title="1">
+                return 1</span>
+        case "int32", "uint32", "float32":<span class="cov8" title="1">
+                return 2</span>
+        case "float64", "int64", "uint64":<span class="cov8" title="1">
+                return 4</span>
+        default:<span class="cov8" title="1">
+                return 1</span>
+        }
+}
+
+// applyScaleOffset applies scale and offset to a value
+func (c *Converter) applyScaleOffset(value interface{}, scale, offset float64) interface{} <span class="cov8" title="1">{
+        if scale == 0 </span><span class="cov8" title="1">{
+                scale = 1
+        }</span>
+
+        <span class="cov8" title="1">var floatVal float64
+        switch v := value.(type) </span>{
+        case float64:<span class="cov8" title="1">
+                floatVal = v</span>
+        case float32:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case int:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case int16:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case int32:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case int64:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case uint:<span class="cov0" title="0">
+                floatVal = float64(v)</span>
+        case uint16:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case uint32:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case uint64:<span class="cov8" title="1">
+                floatVal = float64(v)</span>
+        case bool:<span class="cov8" title="1">
+                if v </span><span class="cov8" title="1">{
+                        return int16(1)
+                }</span>
+                <span class="cov8" title="1">return int16(0)</span>
+        default:<span class="cov0" title="0">
+                return value</span>
+        }
+
+        // Apply: result = (value - offset) / scale
+        <span class="cov8" title="1">return (floatVal - offset) / scale</span>
+}
+
+// putUint16 writes a uint16 value to bytes with the configured byte order
+func (c *Converter) putUint16(result []byte, v uint16) <span class="cov8" title="1">{
+        if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                binary.BigEndian.PutUint16(result, v)
+        }</span> else<span class="cov8" title="1"> {
+                binary.LittleEndian.PutUint16(result, v)
+        }</span>
+}
+
+// putUint32 writes a uint32 value to bytes with the configured byte order
+func (c *Converter) putUint32(result []byte, v uint32) <span class="cov8" title="1">{
+        if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                binary.BigEndian.PutUint32(result, v)
+        }</span> else<span class="cov8" title="1"> {
+                binary.LittleEndian.PutUint32(result, v)
+        }</span>
+}
+
+// putUint64 writes a uint64 value to bytes with the configured byte order
+func (c *Converter) putUint64(result []byte, v uint64) <span class="cov8" title="1">{
+        if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                binary.BigEndian.PutUint64(result, v)
+        }</span> else<span class="cov8" title="1"> {
+                binary.LittleEndian.PutUint64(result, v)
+        }</span>
+}
+
+// getUint16 reads a uint16 value from bytes with the configured byte order
+func (c *Converter) getUint16(data []byte) uint16 <span class="cov0" title="0">{
+        if c.byteOrder == BigEndian </span><span class="cov0" title="0">{
+                return binary.BigEndian.Uint16(data)
+        }</span>
+        <span class="cov0" title="0">return binary.LittleEndian.Uint16(data)</span>
+}
+
+// getUint32 reads a uint32 value from bytes with the configured byte order
+func (c *Converter) getUint32(data []byte) uint32 <span class="cov0" title="0">{
+        if c.byteOrder == BigEndian </span><span class="cov0" title="0">{
+                return binary.BigEndian.Uint32(data)
+        }</span>
+        <span class="cov0" title="0">return binary.LittleEndian.Uint32(data)</span>
+}
+
+// getUint64 reads a uint64 value from bytes with the configured byte order
+func (c *Converter) getUint64(data []byte) uint64 <span class="cov0" title="0">{
+        if c.byteOrder == BigEndian </span><span class="cov0" title="0">{
+                return binary.BigEndian.Uint64(data)
+        }</span>
+        <span class="cov0" title="0">return binary.LittleEndian.Uint64(data)</span>
+}
+
+func (c *Converter) boolToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v bool
+        switch val := value.(type) </span>{
+        case bool:<span class="cov8" title="1">
+                v = val</span>
+        case int, int16, int32, int64:<span class="cov8" title="1">
+                v = val != 0</span>
+        case uint, uint16, uint32, uint64:<span class="cov0" title="0">
+                v = val != 0</span>
+        case float64:<span class="cov8" title="1">
+                v = val != 0</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to bool", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 2)
+        if v </span><span class="cov8" title="1">{
+                result[0] = 0xFF
+                result[1] = 0x00
+        }</span>
+        <span class="cov8" title="1">return result, nil</span>
+}
+
+func (c *Converter) int16ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v int16
+        switch val := value.(type) </span>{
+        case int16:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov8" title="1">
+                v = int16(val)</span>
+        case int32:<span class="cov0" title="0">
+                v = int16(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = int16(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = int16(val)</span>
+        case uint16:<span class="cov0" title="0">
+                v = int16(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to int16", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 2)
+        c.putUint16(result, uint16(v))
+        return result, nil</span>
+}
+
+func (c *Converter) uint16ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v uint16
+        switch val := value.(type) </span>{
+        case uint16:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov8" title="1">
+                v = uint16(val)</span>
+        case int16:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case int32:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case uint:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case uint32:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case uint64:<span class="cov0" title="0">
+                v = uint16(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = uint16(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to uint16", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 2)
+        c.putUint16(result, v)
+        return result, nil</span>
+}
+
+func (c *Converter) int32ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v int32
+        switch val := value.(type) </span>{
+        case int32:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov0" title="0">
+                v = int32(val)</span>
+        case int16:<span class="cov0" title="0">
+                v = int32(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = int32(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = int32(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to int32", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 4)
+        c.putUint32(result, uint32(v))
+        return result, nil</span>
+}
+
+func (c *Converter) uint32ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v uint32
+        switch val := value.(type) </span>{
+        case uint32:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov0" title="0">
+                v = uint32(val)</span>
+        case int32:<span class="cov0" title="0">
+                v = uint32(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = uint32(val)</span>
+        case uint:<span class="cov0" title="0">
+                v = uint32(val)</span>
+        case uint64:<span class="cov0" title="0">
+                v = uint32(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = uint32(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to uint32", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 4)
+        c.putUint32(result, v)
+        return result, nil</span>
+}
+
+func (c *Converter) float32ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v float32
+        switch val := value.(type) </span>{
+        case float32:<span class="cov8" title="1">
+                v = val</span>
+        case float64:<span class="cov8" title="1">
+                v = float32(val)</span>
+        case int:<span class="cov8" title="1">
+                v = float32(val)</span>
+        case int32:<span class="cov0" title="0">
+                v = float32(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = float32(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to float32", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 4)
+        bits := math.Float32bits(v)
+        c.putUint32(result, bits)
+        return result, nil</span>
+}
+
+func (c *Converter) float64ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v float64
+        switch val := value.(type) </span>{
+        case float64:<span class="cov8" title="1">
+                v = val</span>
+        case float32:<span class="cov8" title="1">
+                v = float64(val)</span>
+        case int:<span class="cov8" title="1">
+                v = float64(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = float64(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to float64", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 8)
+        bits := math.Float64bits(v)
+        c.putUint64(result, bits)
+        return result, nil</span>
+}
+
+func (c *Converter) int64ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v int64
+        switch val := value.(type) </span>{
+        case int64:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov0" title="0">
+                v = int64(val)</span>
+        case int32:<span class="cov0" title="0">
+                v = int64(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = int64(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to int64", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 8)
+        c.putUint64(result, uint64(v))
+        return result, nil</span>
+}
+
+func (c *Converter) uint64ToBytes(value interface{}) ([]byte, error) <span class="cov8" title="1">{
+        var v uint64
+        switch val := value.(type) </span>{
+        case uint64:<span class="cov8" title="1">
+                v = val</span>
+        case int:<span class="cov0" title="0">
+                v = uint64(val)</span>
+        case int64:<span class="cov0" title="0">
+                v = uint64(val)</span>
+        case uint:<span class="cov0" title="0">
+                v = uint64(val)</span>
+        case uint32:<span class="cov0" title="0">
+                v = uint64(val)</span>
+        case float64:<span class="cov8" title="1">
+                v = uint64(val)</span>
+        default:<span class="cov8" title="1">
+                return nil, fmt.Errorf("cannot convert %T to uint64", value)</span>
+        }
+
+        <span class="cov8" title="1">result := make([]byte, 8)
+        c.putUint64(result, v)
+        return result, nil</span>
+}
+
+// FromBytes converts Modbus register bytes back to a value based on value type
+func (c *Converter) FromBytes(data []byte, valueType string, scale, offset float64) (interface{}, error) <span class="cov8" title="1">{
+        if scale == 0 </span><span class="cov0" title="0">{
+                scale = 1
+        }</span>
+
+        <span class="cov8" title="1">var rawValue float64
+
+        switch valueType </span>{
+        case "bool":<span class="cov8" title="1">
+                if len(data) &lt; 2 </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("insufficient data for bool")
+                }</span>
+                <span class="cov8" title="1">return data[0] != 0 || data[1] != 0, nil</span>
+        case "int16":<span class="cov8" title="1">
+                if len(data) &lt; 2 </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("insufficient data for int16")
+                }</span>
+                <span class="cov8" title="1">var v int16
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        v = int16(binary.BigEndian.Uint16(data))
+                }</span> else<span class="cov8" title="1"> {
+                        v = int16(binary.LittleEndian.Uint16(data))
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(v)</span>
+        case "uint16":<span class="cov8" title="1">
+                if len(data) &lt; 2 </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("insufficient data for uint16")
+                }</span>
+                <span class="cov8" title="1">var v uint16
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        v = binary.BigEndian.Uint16(data)
+                }</span> else<span class="cov0" title="0"> {
+                        v = binary.LittleEndian.Uint16(data)
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(v)</span>
+        case "int32":<span class="cov8" title="1">
+                if len(data) &lt; 4 </span><span class="cov8" title="1">{
+                        return nil, fmt.Errorf("insufficient data for int32")
+                }</span>
+                <span class="cov8" title="1">var v int32
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        v = int32(binary.BigEndian.Uint32(data))
+                }</span> else<span class="cov0" title="0"> {
+                        v = int32(binary.LittleEndian.Uint32(data))
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(v)</span>
+        case "uint32":<span class="cov8" title="1">
+                if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("insufficient data for uint32")
+                }</span>
+                <span class="cov8" title="1">var v uint32
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        v = binary.BigEndian.Uint32(data)
+                }</span> else<span class="cov0" title="0"> {
+                        v = binary.LittleEndian.Uint32(data)
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(v)</span>
+        case "float32":<span class="cov8" title="1">
+                if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("insufficient data for float32")
+                }</span>
+                <span class="cov8" title="1">var bits uint32
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        bits = binary.BigEndian.Uint32(data)
+                }</span> else<span class="cov0" title="0"> {
+                        bits = binary.LittleEndian.Uint32(data)
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(math.Float32frombits(bits))</span>
+        default:<span class="cov8" title="1">
+                // Default to uint16
+                if len(data) &lt; 2 </span><span class="cov0" title="0">{
+                        return nil, fmt.Errorf("insufficient data")
+                }</span>
+                <span class="cov8" title="1">var v uint16
+                if c.byteOrder == BigEndian </span><span class="cov8" title="1">{
+                        v = binary.BigEndian.Uint16(data)
+                }</span> else<span class="cov0" title="0"> {
+                        v = binary.LittleEndian.Uint16(data)
+                }</span>
+                <span class="cov8" title="1">rawValue = float64(v)</span>
+        }
+
+        // Apply inverse: value = raw * scale + offset
+        <span class="cov8" title="1">return rawValue*scale + offset, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file7" style="display: none">package modbusserver
+
+import (
+        "app-modbus-go/internal/pkg/config"
+        "app-modbus-go/internal/pkg/logger"
+        "app-modbus-go/internal/pkg/mappingmanager"
+        "context"
+        "fmt"
+        "sync/atomic"
+        "time"
+
+        "github.com/goburrow/serial"
+        "github.com/tbrandon/mbserver"
+)
+
+// ModbusServer implements the Modbus TCP server
+type ModbusServer struct {
+        config         *config.ModbusConfig
+        server         *mbserver.Server
+        mappingManager mappingmanager.MappingManagerInterface
+        converter      *Converter
+        lc             logger.LoggingClient
+        running        atomic.Bool
+        ctx            context.Context
+        cancel         context.CancelFunc
+}
+
+// NewModbusServer creates a new Modbus TCP server
+func NewModbusServer(
+        cfg *config.ModbusConfig,
+        mappingManager mappingmanager.MappingManagerInterface,
+        lc logger.LoggingClient,
+) *ModbusServer <span class="cov0" title="0">{
+        return &amp;ModbusServer{
+                config:         cfg,
+                mappingManager: mappingManager,
+                converter:      NewConverter(BigEndian),
+                lc:             lc,
+        }
+}</span>
+
+// Start starts the Modbus TCP server
+func (s *ModbusServer) Start(ctx context.Context) error <span class="cov0" title="0">{
+        if s.running.Load() </span><span class="cov0" title="0">{
+                return fmt.Errorf("modbus server already running")
+        }</span>
+
+        <span class="cov0" title="0">s.ctx, s.cancel = context.WithCancel(ctx)
+
+        // Create Modbus server
+        s.server = mbserver.NewServer()
+
+        // Register handlers for reading coils (0x01)
+        s.server.RegisterFunctionHandler(1, s.handleReadCoils)
+
+        // Register handlers for reading discrete inputs (0x02)
+        s.server.RegisterFunctionHandler(2, s.handleReadDiscreteInputs)
+
+        // Register handlers for reading holding registers (0x03)
+        s.server.RegisterFunctionHandler(3, s.handleReadHoldingRegisters)
+
+        // Register handlers for reading input registers (0x04)
+        s.server.RegisterFunctionHandler(4, s.handleReadInputRegisters)
+
+        // Register handler for writing single coil (0x05)
+        s.server.RegisterFunctionHandler(5, s.handleWriteSingleCoil)
+
+        // Register handler for writing single register (0x06)
+        s.server.RegisterFunctionHandler(6, s.handleWriteSingleRegister)
+
+        // Register handler for writing multiple coils (0x0F)
+        s.server.RegisterFunctionHandler(15, s.handleWriteMultipleCoils)
+
+        // Register handler for writing multiple registers (0x10)
+        s.server.RegisterFunctionHandler(16, s.handleWriteMultipleRegisters)
+
+        // Start listener based on configured type
+        var err error
+        switch s.config.Type </span>{
+        case "TCP":<span class="cov0" title="0">
+                addr := fmt.Sprintf("%s:%d", s.config.TCP.Host, s.config.TCP.Port)
+                err = s.server.ListenTCP(addr)
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to start Modbus TCP listener: %w", err)
+                }</span>
+                <span class="cov0" title="0">s.running.Store(true)
+                s.lc.Info(fmt.Sprintf("Modbus TCP server started on %s", addr))</span>
+
+        case "RTU":<span class="cov0" title="0">
+                err = s.startRTU()
+                if err != nil </span><span class="cov0" title="0">{
+                        return fmt.Errorf("failed to start Modbus RTU listener: %w", err)
+                }</span>
+                <span class="cov0" title="0">s.running.Store(true)
+                s.lc.Info(fmt.Sprintf("Modbus RTU server started on %s", s.config.RTU.Port))</span>
+
+        default:<span class="cov0" title="0">
+                return fmt.Errorf("unsupported Modbus type: %s (must be TCP or RTU)", s.config.Type)</span>
+        }
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// handleReadCoils handles function code 0x01
+func (s *ModbusServer) handleReadCoils(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        data := frame.GetData()
+        if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov0" title="0">startAddr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        quantity := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+
+        if quantity &lt; 1 || quantity &gt; 2000 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov0" title="0">s.lc.Debug(fmt.Sprintf("Read coils: addr=%d, quantity=%d", startAddr, quantity))
+
+        // Read coil values from cache
+        result, err := s.readCoils(startAddr, quantity)
+        if err != nil </span><span class="cov0" title="0">{
+                s.lc.Error(fmt.Sprintf("Read coils error: %s", err.Error()))
+                return nil, &amp;mbserver.SlaveDeviceFailure
+        }</span>
+
+        <span class="cov0" title="0">return result, &amp;mbserver.Success</span>
+}
+
+// handleReadDiscreteInputs handles function code 0x02
+func (s *ModbusServer) handleReadDiscreteInputs(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        // Discrete inputs are handled the same as coils in this implementation
+        return s.handleReadCoils(srv, frame)
+}</span>
+
+// handleReadHoldingRegisters handles function code 0x03
+func (s *ModbusServer) handleReadHoldingRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        data := frame.GetData()
+        if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov0" title="0">startAddr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        quantity := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+
+        s.lc.Debug(fmt.Sprintf("Read holding registers: addr=%d, quantity=%d", startAddr, quantity))
+
+        // Read from cache
+        result, err := s.readRegisters(startAddr, quantity)
+        if err != nil </span><span class="cov0" title="0">{
+                s.lc.Error(fmt.Sprintf("Read registers error: %s", err.Error()))
+                return nil, &amp;mbserver.SlaveDeviceFailure
+        }</span>
+
+        <span class="cov0" title="0">return result, &amp;mbserver.Success</span>
+}
+
+// handleReadInputRegisters handles function code 0x04
+func (s *ModbusServer) handleReadInputRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        // Input registers are handled the same as holding registers in this implementation
+        return s.handleReadHoldingRegisters(srv, frame)
+}</span>
+
+// readCoils reads coil values from the mapping manager's cache
+func (s *ModbusServer) readCoils(startAddr uint16, quantity uint16) ([]byte, error) <span class="cov8" title="1">{
+        // Calculate byte count (8 coils per byte, round up)
+        byteCount := (quantity + 7) / 8
+
+        // Build response: byte count + coil values
+        result := make([]byte, 1+byteCount)
+        result[0] = byte(byteCount)
+
+        // Read each coil value and pack into bytes
+        for i := uint16(0); i &lt; quantity; i++ </span><span class="cov8" title="1">{
+                addr := startAddr + i
+                cachedData, ok := s.mappingManager.GetCachedValue(addr)
+
+                var bitValue bool
+                if ok &amp;&amp; cachedData != nil </span><span class="cov8" title="1">{
+                        // Convert cached value to boolean
+                        bitValue = s.valueToBool(cachedData.Value)
+                }</span>
+
+                // Pack bit into byte
+                <span class="cov8" title="1">if bitValue </span><span class="cov8" title="1">{
+                        byteIndex := i / 8
+                        bitIndex := i % 8
+                        result[1+byteIndex] |= (1 &lt;&lt; bitIndex)
+                }</span>
+        }
+
+        <span class="cov8" title="1">return result, nil</span>
+}
+
+// valueToBool converts various value types to boolean
+func (s *ModbusServer) valueToBool(value interface{}) bool <span class="cov8" title="1">{
+        switch v := value.(type) </span>{
+        case bool:<span class="cov8" title="1">
+                return v</span>
+        case int:<span class="cov8" title="1">
+                return v != 0</span>
+        case int8:<span class="cov8" title="1">
+                return v != 0</span>
+        case int16:<span class="cov8" title="1">
+                return v != 0</span>
+        case int32:<span class="cov8" title="1">
+                return v != 0</span>
+        case int64:<span class="cov8" title="1">
+                return v != 0</span>
+        case uint:<span class="cov8" title="1">
+                return v != 0</span>
+        case uint8:<span class="cov8" title="1">
+                return v != 0</span>
+        case uint16:<span class="cov8" title="1">
+                return v != 0</span>
+        case uint32:<span class="cov8" title="1">
+                return v != 0</span>
+        case uint64:<span class="cov8" title="1">
+                return v != 0</span>
+        case float32:<span class="cov8" title="1">
+                return v != 0.0</span>
+        case float64:<span class="cov8" title="1">
+                return v != 0.0</span>
+        case string:<span class="cov8" title="1">
+                return v == "true" || v == "1" || v == "on"</span>
+        default:<span class="cov8" title="1">
+                return false</span>
+        }
+}
+
+// readRegisters reads register values from the mapping manager's cache
+func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte, error) <span class="cov0" title="0">{
+        // Get cached data for all requested addresses
+        cachedData, err := s.mappingManager.GetCachedRegisters(startAddr, quantity)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+
+        // Build response: byte count + register values
+        <span class="cov0" title="0">result := make([]byte, 1+quantity*2)
+        result[0] = byte(quantity * 2) // Byte count
+
+        offset := 1
+        for i := uint16(0); i &lt; quantity; i++ </span><span class="cov0" title="0">{
+                data := cachedData[i]
+                if data == nil </span><span class="cov0" title="0">{
+                        // No data for this address, return zeros
+                        result[offset] = 0
+                        result[offset+1] = 0
+                }</span> else<span class="cov0" title="0"> {
+                        // Convert value to bytes
+                        bytes, err := s.converter.ToRegisters(data.Value, data.ValueType, data.Scale, data.Offset)
+                        if err != nil </span><span class="cov0" title="0">{
+                                s.lc.Warn(fmt.Sprintf("Conversion error for addr %d: %s", startAddr+i, err.Error()))
+                                result[offset] = 0
+                                result[offset+1] = 0
+                        }</span> else<span class="cov0" title="0"> {
+                                // Copy first 2 bytes (one register)
+                                if len(bytes) &gt;= 2 </span><span class="cov0" title="0">{
+                                        copy(result[offset:offset+2], bytes[:2])
+                                }</span>
+                        }
+                }
+                <span class="cov0" title="0">offset += 2</span>
+        }
+
+        <span class="cov0" title="0">return result, nil</span>
+}
+
+// handleWriteSingleCoil handles function code 0x05
+func (s *ModbusServer) handleWriteSingleCoil(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov8" title="1">{
+        data := frame.GetData()
+        if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">addr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        value := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+
+        // Value must be 0x0000 (OFF) or 0xFF00 (ON)
+        if value != 0x0000 &amp;&amp; value != 0xFF00 </span><span class="cov8" title="1">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">s.lc.Debug(fmt.Sprintf("Write single coil: addr=%d, value=0x%04X", addr, value))
+
+        // Check if this address has a mapping
+        mapping, ok := s.mappingManager.GetMappingByAddress(addr)
+        if !ok </span><span class="cov8" title="1">{
+                s.lc.Warn(fmt.Sprintf("No mapping for address %d", addr))
+                return nil, &amp;mbserver.IllegalDataAddress
+        }</span>
+
+        // Check if writeable
+        <span class="cov8" title="1">if mapping.SouthResource != nil &amp;&amp; mapping.SouthResource.ReadWrite == "R" </span><span class="cov8" title="1">{
+                s.lc.Warn(fmt.Sprintf("Address %d is read-only", addr))
+                return nil, &amp;mbserver.IllegalDataAddress
+        }</span>
+
+        // Echo request data for success response
+        <span class="cov8" title="1">return data, &amp;mbserver.Success</span>
+}
+
+// handleWriteSingleRegister handles function code 0x06
+func (s *ModbusServer) handleWriteSingleRegister(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        data := frame.GetData()
+        if len(data) &lt; 4 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov0" title="0">addr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        value := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+
+        s.lc.Debug(fmt.Sprintf("Write single register: addr=%d, value=%d", addr, value))
+
+        // Check if this address has a mapping
+        mapping, ok := s.mappingManager.GetMappingByAddress(addr)
+        if !ok </span><span class="cov0" title="0">{
+                s.lc.Warn(fmt.Sprintf("No mapping for address %d", addr))
+                return nil, &amp;mbserver.IllegalDataAddress
+        }</span>
+
+        // Check if writeable
+        <span class="cov0" title="0">if mapping.SouthResource != nil &amp;&amp; mapping.SouthResource.ReadWrite == "R" </span><span class="cov0" title="0">{
+                s.lc.Warn(fmt.Sprintf("Address %d is read-only", addr))
+                return nil, &amp;mbserver.IllegalDataAddress
+        }</span>
+
+        // Echo request data for success response
+        <span class="cov0" title="0">return data, &amp;mbserver.Success</span>
+}
+
+// handleWriteMultipleCoils handles function code 0x0F (15)
+func (s *ModbusServer) handleWriteMultipleCoils(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov8" title="1">{
+        data := frame.GetData()
+        if len(data) &lt; 5 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">startAddr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        quantity := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+        byteCount := data[4]
+
+        if quantity &lt; 1 || quantity &gt; 1968 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">expectedByteCount := (quantity + 7) / 8
+        if byteCount != byte(expectedByteCount) </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">if len(data) &lt; int(5+byteCount) </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov8" title="1">s.lc.Debug(fmt.Sprintf("Write multiple coils: addr=%d, quantity=%d", startAddr, quantity))
+
+        // Validate all addresses are writeable
+        for i := uint16(0); i &lt; quantity; i++ </span><span class="cov8" title="1">{
+                addr := startAddr + i
+                mapping, ok := s.mappingManager.GetMappingByAddress(addr)
+                if ok &amp;&amp; mapping.SouthResource != nil &amp;&amp; mapping.SouthResource.ReadWrite == "R" </span><span class="cov0" title="0">{
+                        s.lc.Warn(fmt.Sprintf("Address %d is read-only", addr))
+                        return nil, &amp;mbserver.IllegalDataAddress
+                }</span>
+        }
+
+        // Return start address and quantity for success response
+        <span class="cov8" title="1">return data[:4], &amp;mbserver.Success</span>
+}
+
+// handleWriteMultipleRegisters handles function code 0x10
+func (s *ModbusServer) handleWriteMultipleRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) <span class="cov0" title="0">{
+        data := frame.GetData()
+        if len(data) &lt; 5 </span><span class="cov0" title="0">{
+                return nil, &amp;mbserver.IllegalDataValue
+        }</span>
+
+        <span class="cov0" title="0">startAddr := uint16(data[0])&lt;&lt;8 | uint16(data[1])
+        quantity := uint16(data[2])&lt;&lt;8 | uint16(data[3])
+
+        s.lc.Debug(fmt.Sprintf("Write multiple registers: addr=%d, quantity=%d", startAddr, quantity))
+
+        // Return start address and quantity for success response
+        return data[:4], &amp;mbserver.Success</span>
+}
+
+// startRTU starts the Modbus RTU server
+func (s *ModbusServer) startRTU() error <span class="cov0" title="0">{
+        // Create serial port configuration
+        serialConfig := &amp;serial.Config{
+                Address:  s.config.RTU.Port,
+                BaudRate: s.config.RTU.BaudRate,
+                DataBits: s.config.RTU.DataBits,
+                StopBits: s.config.RTU.StopBits,
+                Parity:   s.config.RTU.Parity,
+                Timeout:  time.Duration(s.config.Timeout) * time.Millisecond,
+        }
+
+        s.lc.Debug(fmt.Sprintf("Starting Modbus RTU on %s (baud=%d, data=%d, parity=%s, stop=%d)",
+                serialConfig.Address,
+                serialConfig.BaudRate,
+                serialConfig.DataBits,
+                serialConfig.Parity,
+                serialConfig.StopBits,
+        ))
+
+        // Start RTU listener
+        err := s.server.ListenRTU(serialConfig)
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to start RTU listener: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">return nil</span>
+}
+
+// Stop stops the Modbus server (TCP or RTU)
+func (s *ModbusServer) Stop() error <span class="cov0" title="0">{
+        if !s.running.Load() </span><span class="cov0" title="0">{
+                return nil
+        }</span>
+
+        <span class="cov0" title="0">s.running.Store(false)
+        if s.cancel != nil </span><span class="cov0" title="0">{
+                s.cancel()
+        }</span>
+
+        <span class="cov0" title="0">if s.server != nil </span><span class="cov0" title="0">{
+                s.server.Close()
+        }</span>
+
+        <span class="cov0" title="0">s.lc.Info("Modbus TCP server stopped")
+        return nil</span>
+}
+
+// IsRunning returns whether the server is running
+func (s *ModbusServer) IsRunning() bool <span class="cov0" title="0">{
+        return s.running.Load()
+}</span>
+</pre>
+		
+		<pre class="file" id="file8" style="display: none">package mqtt
+
+import (
+        "app-modbus-go/internal/pkg/logger"
+        "encoding/json"
+        "fmt"
+        "sync"
+        "time"
+
+        pahomqtt "github.com/eclipse/paho.mqtt.golang"
+)
+
+// MessageHandler handles incoming MQTT messages of a specific type
+type MessageHandler func(msg *MQTTMessage) error
+
+// ResponseHandler handles incoming MQTT responses of a specific type
+type ResponseHandler func(resp *MQTTResponse) error
+
+// ClientManager manages MQTT connections and message routing
+type ClientManager struct {
+        client pahomqtt.Client
+        nodeID string
+
+        topicUp   string // subscribe: /v1/data/{nodeId}/up
+        topicDown string // publish: /v1/data/{nodeId}/down
+
+        messageHandlers  map[int]MessageHandler
+        responseHandlers map[int]ResponseHandler
+
+        // request/response matching
+        pendingRequests map[string]chan *MQTTResponse
+        pendingMu       sync.RWMutex
+
+        heartbeatStop chan struct{}
+
+        lc logger.LoggingClient
+        mu sync.RWMutex
+}
+
+// ClientConfig holds MQTT client configuration
+type ClientConfig struct {
+        Broker    string
+        ClientID  string
+        Username  string
+        Password  string
+        QoS       byte
+        KeepAlive int // seconds
+}
+
+// NewClientManager creates a new MQTT client manager
+func NewClientManager(nodeID string, cfg ClientConfig, lc logger.LoggingClient) *ClientManager <span class="cov8" title="1">{
+        return &amp;ClientManager{
+                nodeID:           nodeID,
+                topicUp:          fmt.Sprintf("/v1/data/%s/up", nodeID),
+                topicDown:        fmt.Sprintf("/v1/data/%s/down", nodeID),
+                messageHandlers:  make(map[int]MessageHandler),
+                responseHandlers: make(map[int]ResponseHandler),
+                pendingRequests:  make(map[string]chan *MQTTResponse),
+                lc:               lc,
+        }
+}</span>
+
+// Connect establishes the MQTT connection
+func (cm *ClientManager) Connect(cfg ClientConfig) error <span class="cov0" title="0">{
+        opts := pahomqtt.NewClientOptions()
+        opts.AddBroker(cfg.Broker)
+        opts.SetClientID(cfg.ClientID)
+        if cfg.Username != "" </span><span class="cov0" title="0">{
+                opts.SetUsername(cfg.Username)
+        }</span>
+        <span class="cov0" title="0">if cfg.Password != "" </span><span class="cov0" title="0">{
+                opts.SetPassword(cfg.Password)
+        }</span>
+        <span class="cov0" title="0">if cfg.KeepAlive &gt; 0 </span><span class="cov0" title="0">{
+                opts.SetKeepAlive(time.Duration(cfg.KeepAlive) * time.Second)
+        }</span>
+        <span class="cov0" title="0">opts.SetAutoReconnect(true)
+        opts.SetCleanSession(true)
+        opts.SetOnConnectHandler(func(c pahomqtt.Client) </span><span class="cov0" title="0">{
+                cm.lc.Info("MQTT connected, re-subscribing topics")
+                _ = cm.subscribe()
+        }</span>)
+        <span class="cov0" title="0">opts.SetConnectionLostHandler(func(c pahomqtt.Client, err error) </span><span class="cov0" title="0">{
+                cm.lc.Warn("MQTT connection lost:", err.Error())
+        }</span>)
+
+        <span class="cov0" title="0">cm.client = pahomqtt.NewClient(opts)
+        token := cm.client.Connect()
+        token.Wait()
+        if token.Error() != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT connect failed: %w", token.Error())
+        }</span>
+        <span class="cov0" title="0">cm.lc.Info("MQTT connected to broker:", cfg.Broker)
+        return nil</span>
+}
+
+// Subscribe subscribes to the up topic for receiving messages
+func (cm *ClientManager) Subscribe() error <span class="cov0" title="0">{
+        return cm.subscribe()
+}</span>
+
+func (cm *ClientManager) subscribe() error <span class="cov0" title="0">{
+        token := cm.client.Subscribe(cm.topicUp, 1, cm.onMessage)
+        token.Wait()
+        if token.Error() != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT subscribe failed: %w", token.Error())
+        }</span>
+        <span class="cov0" title="0">cm.lc.Info("Subscribed to topic:", cm.topicUp)
+        return nil</span>
+}
+
+// onMessage handles incoming MQTT messages and routes to appropriate handler
+func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message) <span class="cov8" title="1">{
+        cm.lc.Debug("Received MQTT message on topic:", msg.Topic())
+
+        raw := msg.Payload()
+
+        // Try parsing as response first (has code/msg fields)
+        var resp MQTTResponse
+        if err := json.Unmarshal(raw, &amp;resp); err == nil &amp;&amp; resp.Code != 0 </span><span class="cov8" title="1">{
+                cm.lc.Debug(fmt.Sprintf("Received response type=%d requestId=%s code=%d", resp.Type, resp.RequestID, resp.Code))
+
+                // Check if this is a response to a pending request
+                cm.pendingMu.RLock()
+                ch, exists := cm.pendingRequests[resp.RequestID]
+                cm.pendingMu.RUnlock()
+                if exists </span><span class="cov8" title="1">{
+                        select </span>{
+                        case ch &lt;- &amp;resp:<span class="cov8" title="1"></span>
+                        default:<span class="cov0" title="0"></span>
+                        }
+                        <span class="cov8" title="1">cm.pendingMu.Lock()
+                        delete(cm.pendingRequests, resp.RequestID)
+                        cm.pendingMu.Unlock()
+                        return</span>
+                }
+
+                // Route to response handler
+                <span class="cov8" title="1">cm.mu.RLock()
+                handler, ok := cm.responseHandlers[resp.Type]
+                cm.mu.RUnlock()
+                if ok </span><span class="cov8" title="1">{
+                        if err := handler(&amp;resp); err != nil </span><span class="cov0" title="0">{
+                                cm.lc.Error(fmt.Sprintf("Response handler error for type=%d: %s", resp.Type, err.Error()))
+                        }</span>
+                }
+                <span class="cov8" title="1">return</span>
+        }
+
+        // Parse as regular message
+        <span class="cov8" title="1">var message MQTTMessage
+        if err := json.Unmarshal(raw, &amp;message); err != nil </span><span class="cov8" title="1">{
+                cm.lc.Error("Failed to parse MQTT message:", err.Error())
+                return
+        }</span>
+        <span class="cov8" title="1">cm.lc.Debug(fmt.Sprintf("Received message type=%d requestId=%s", message.Type, message.RequestID))
+
+        // Route to message handler
+        cm.mu.RLock()
+        handler, ok := cm.messageHandlers[message.Type]
+        cm.mu.RUnlock()
+        if ok </span><span class="cov8" title="1">{
+                if err := handler(&amp;message); err != nil </span><span class="cov0" title="0">{
+                        cm.lc.Error(fmt.Sprintf("Message handler error for type=%d: %s", message.Type, err.Error()))
+                }</span>
+        } else<span class="cov8" title="1"> {
+                cm.lc.Warn(fmt.Sprintf("No handler registered for message type=%d", message.Type))
+        }</span>
+}
+
+// Publish publishes a message to the down topic
+func (cm *ClientManager) Publish(msg *MQTTMessage) error <span class="cov0" title="0">{
+        data, err := msg.ToJSON()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to serialize message: %w", err)
+        }</span>
+        <span class="cov0" title="0">token := cm.client.Publish(cm.topicDown, 1, false, data)
+        token.Wait()
+        if token.Error() != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT publish failed: %w", token.Error())
+        }</span>
+        <span class="cov0" title="0">cm.lc.Debug(fmt.Sprintf("Published message type=%d to %s", msg.Type, cm.topicDown))
+        return nil</span>
+}
+
+// PublishResponse publishes a response message to the down topic
+func (cm *ClientManager) PublishResponse(resp *MQTTResponse) error <span class="cov0" title="0">{
+        data, err := resp.ToJSON()
+        if err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("failed to serialize response: %w", err)
+        }</span>
+        <span class="cov0" title="0">token := cm.client.Publish(cm.topicDown, 1, false, data)
+        token.Wait()
+        if token.Error() != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT publish response failed: %w", token.Error())
+        }</span>
+        <span class="cov0" title="0">cm.lc.Debug(fmt.Sprintf("Published response type=%d to %s", resp.Type, cm.topicDown))
+        return nil</span>
+}
+
+// PublishAndWait publishes a message and waits for a matching response
+func (cm *ClientManager) PublishAndWait(msg *MQTTMessage, timeout time.Duration) (*MQTTResponse, error) <span class="cov0" title="0">{
+        ch := make(chan *MQTTResponse, 1)
+
+        cm.pendingMu.Lock()
+        cm.pendingRequests[msg.RequestID] = ch
+        cm.pendingMu.Unlock()
+
+        if err := cm.Publish(msg); err != nil </span><span class="cov0" title="0">{
+                cm.pendingMu.Lock()
+                delete(cm.pendingRequests, msg.RequestID)
+                cm.pendingMu.Unlock()
+                return nil, err
+        }</span>
+
+        <span class="cov0" title="0">select </span>{
+        case resp := &lt;-ch:<span class="cov0" title="0">
+                return resp, nil</span>
+        case &lt;-time.After(timeout):<span class="cov0" title="0">
+                cm.pendingMu.Lock()
+                delete(cm.pendingRequests, msg.RequestID)
+                cm.pendingMu.Unlock()
+                return nil, fmt.Errorf("request %s timed out after %v", msg.RequestID, timeout)</span>
+        }
+}
+
+// StartHeartbeat starts periodic heartbeat sending
+func (cm *ClientManager) StartHeartbeat(interval time.Duration) <span class="cov0" title="0">{
+        cm.heartbeatStop = make(chan struct{})
+        go func() </span><span class="cov0" title="0">{
+                ticker := time.NewTicker(interval)
+                defer ticker.Stop()
+
+                // Send initial heartbeat immediately
+                cm.sendHeartbeat()
+
+                for </span><span class="cov0" title="0">{
+                        select </span>{
+                        case &lt;-ticker.C:<span class="cov0" title="0">
+                                cm.sendHeartbeat()</span>
+                        case &lt;-cm.heartbeatStop:<span class="cov0" title="0">
+                                cm.lc.Info("Heartbeat stopped")
+                                return</span>
+                        }
+                }
+        }()
+        <span class="cov0" title="0">cm.lc.Info(fmt.Sprintf("Heartbeat started with interval %v", interval))</span>
+}
+
+func (cm *ClientManager) sendHeartbeat() <span class="cov0" title="0">{
+        msg := NewMessage(TypeHeartbeat, nil)
+        if err := cm.Publish(msg); err != nil </span><span class="cov0" title="0">{
+                cm.lc.Error("Failed to send heartbeat:", err.Error())
+        }</span> else<span class="cov0" title="0"> {
+                cm.lc.Debug("Heartbeat sent")
+        }</span>
+}
+
+// StopHeartbeat stops the heartbeat goroutine
+func (cm *ClientManager) StopHeartbeat() <span class="cov8" title="1">{
+        if cm.heartbeatStop != nil </span><span class="cov8" title="1">{
+                close(cm.heartbeatStop)
+        }</span>
+}
+
+// RegisterMessageHandler registers a handler for a specific message type
+func (cm *ClientManager) RegisterMessageHandler(msgType int, handler MessageHandler) <span class="cov8" title="1">{
+        cm.mu.Lock()
+        defer cm.mu.Unlock()
+        cm.messageHandlers[msgType] = handler
+}</span>
+
+// RegisterResponseHandler registers a handler for a specific response type
+func (cm *ClientManager) RegisterResponseHandler(msgType int, handler ResponseHandler) <span class="cov8" title="1">{
+        cm.mu.Lock()
+        defer cm.mu.Unlock()
+        cm.responseHandlers[msgType] = handler
+}</span>
+
+// Disconnect cleanly disconnects the MQTT client
+func (cm *ClientManager) Disconnect() <span class="cov8" title="1">{
+        cm.StopHeartbeat()
+        if cm.client != nil &amp;&amp; cm.client.IsConnected() </span><span class="cov0" title="0">{
+                cm.client.Disconnect(1000)
+                cm.lc.Info("MQTT disconnected")
+        }</span>
+}
+
+// GetNodeID returns the node ID
+func (cm *ClientManager) GetNodeID() string <span class="cov8" title="1">{
+        return cm.nodeID
+}</span>
+
+// IsConnected returns whether the MQTT client is connected
+func (cm *ClientManager) IsConnected() bool <span class="cov8" title="1">{
+        return cm.client != nil &amp;&amp; cm.client.IsConnected()
+}</span>
+</pre>
+		
+		<pre class="file" id="file9" style="display: none">package mqtt
+
+import (
+        "encoding/json"
+        "fmt"
+        "time"
+
+        "github.com/google/uuid"
+)
+
+// Message type constants
+const (
+        TypeHeartbeat           = 1 // 心跳
+        TypeQueryDevice         = 2 // 查询设备属性
+        TypeDeviceAttributePush = 3 // 下发设备属性
+        TypeSensorData          = 4 // 传感器数据
+        TypeForwardLog          = 5 // 转发日志
+        TypeCommand             = 6 // 命令下发
+)
+
+// MQTTMessage represents the base message structure
+type MQTTMessage struct {
+        RequestID string      `json:"requestId"`
+        Version   string      `json:"version"`
+        Type      int         `json:"type"`
+        Timestamp int64       `json:"timestamp"`
+        Payload   interface{} `json:"payload"`
+}
+
+// MQTTResponse represents a response message with code and msg
+type MQTTResponse struct {
+        RequestID string      `json:"requestId"`
+        Version   string      `json:"version"`
+        Type      int         `json:"type"`
+        Timestamp int64       `json:"timestamp"`
+        Code      int         `json:"code"`
+        Msg       string      `json:"msg"`
+        Payload   interface{} `json:"payload"`
+}
+
+// NewMessage creates a new MQTTMessage with default values
+func NewMessage(msgType int, payload interface{}) *MQTTMessage <span class="cov8" title="1">{
+        return &amp;MQTTMessage{
+                RequestID: uuid.New().String(),
+                Version:   "1.0",
+                Type:      msgType,
+                Timestamp: time.Now().UnixMilli(),
+                Payload:   payload,
+        }
+}</span>
+
+// NewResponse creates a new MQTTResponse from a request
+func NewResponse(requestID string, msgType int, code int, msg string, payload interface{}) *MQTTResponse <span class="cov8" title="1">{
+        return &amp;MQTTResponse{
+                RequestID: requestID,
+                Version:   "1.0",
+                Type:      msgType,
+                Timestamp: time.Now().UnixMilli(),
+                Code:      code,
+                Msg:       msg,
+                Payload:   payload,
+        }
+}</span>
+
+// ToJSON serializes the message to JSON bytes
+func (m *MQTTMessage) ToJSON() ([]byte, error) <span class="cov0" title="0">{
+        return json.Marshal(m)
+}</span>
+
+// ToJSON serializes the response to JSON bytes
+func (r *MQTTResponse) ToJSON() ([]byte, error) <span class="cov0" title="0">{
+        return json.Marshal(r)
+}</span>
+
+// ParseMessage parses JSON bytes into an MQTTMessage
+func ParseMessage(data []byte) (*MQTTMessage, error) <span class="cov0" title="0">{
+        var msg MQTTMessage
+        if err := json.Unmarshal(data, &amp;msg); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse message: %w", err)
+        }</span>
+        <span class="cov0" title="0">return &amp;msg, nil</span>
+}
+
+// ParseResponse parses JSON bytes into an MQTTResponse
+func ParseResponse(data []byte) (*MQTTResponse, error) <span class="cov0" title="0">{
+        var resp MQTTResponse
+        if err := json.Unmarshal(data, &amp;resp); err != nil </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("failed to parse response: %w", err)
+        }</span>
+        <span class="cov0" title="0">return &amp;resp, nil</span>
+}
+
+// ---- Payload Types ----
+
+// HeartbeatPayload for type=1 heartbeat messages
+type HeartbeatPayload struct{}
+
+// QueryDevicePayload for type=2 query device request
+type QueryDevicePayload struct {
+        Cmd string `json:"cmd"` // "0101" for querying device attributes
+}
+
+// NorthResource represents a north-side resource definition
+type NorthResource struct {
+        Name            string  `json:"name"`
+        NorthModelName  string  `json:"northModelName"`
+        Description     string  `json:"description"`
+        ValueType       string  `json:"valueType"` // int16, float32, etc.
+        Scale           float64 `json:"scale"`
+        OffsetValue     float64 `json:"offsetValue"`
+        OtherParameters struct {
+                Modbus struct {
+                        Address uint16 `json:"address"` // Modbus register address
+                } `json:"modbus"`
+        } `json:"otherParameters"`
+}
+
+// SouthResource represents a south-side resource definition
+type SouthResource struct {
+        Name            string      `json:"name"`
+        SouthModelName  string      `json:"southModelName"`
+        ReadWrite       string      `json:"readWrite"` // R/W/RW
+        ValueType       string      `json:"valueType"`
+        Scale           float64     `json:"scale"`
+        Offset          float64     `json:"offset"`
+        AutoUpload      bool        `json:"autoUpload"`
+        OtherParameters interface{} `json:"other_parameters"`
+}
+
+// ResourceMapping represents the mapping between north and south resources
+type ResourceMapping struct {
+        NorthResource *NorthResource `json:"northResource"`
+        SouthResource *SouthResource `json:"southResource"`
+}
+
+// DeviceMapping represents device level mapping
+type DeviceMapping struct {
+        NorthDeviceName string             `json:"northDeviceName"`
+        Resources       []*ResourceMapping `json:"resources"`
+}
+
+// QueryDeviceResponse for type=2 query device response payload
+type QueryDeviceResponse struct {
+        Cmd    string           `json:"cmd"`
+        Result []*DeviceMapping `json:"result"`
+}
+
+// DeviceAttributePushPayload for type=3 device attribute push
+type DeviceAttributePushPayload struct {
+        Devices []*DeviceMapping `json:"devices"`
+}
+
+// SensorDataPayload for type=4 sensor data messages
+type SensorDataPayload struct {
+        NorthDeviceName string                 `json:"northDeviceName"`
+        Data            map[string]interface{} `json:"data"`
+}
+
+// ForwardLogPayload for type=5 forward log messages
+type ForwardLogPayload struct {
+        Status          int                    `json:"status"` // 1-success, 0-failure
+        NorthDeviceName string                 `json:"northDeviceName"`
+        Data            map[string]interface{} `json:"data"`
+}
+
+// CommandPayload for type=6 command messages
+type CommandPayload struct {
+        CmdType    string         `json:"cmdType"` // "GET"/"PUT"
+        CmdContent CommandContent `json:"cmdContent"`
+}
+
+// CommandContent represents the content of a command
+type CommandContent struct {
+        NorthDeviceName    string `json:"northDeviceName"`
+        NorthResourceName  string `json:"northResourceName"`
+        NorthResourceValue string `json:"northResourceValue,omitempty"`
+}
+
+// CommandResponse for type=6 command response
+type CommandResponsePayload struct {
+        CmdType    string                 `json:"cmdType"`
+        StatusCode int                    `json:"statusCode"`
+        CmdContent CommandResponseContent `json:"cmdContent"`
+}
+
+// CommandResponseContent represents the content of a command response
+type CommandResponseContent struct {
+        NorthDeviceName    string `json:"northDeviceName"`
+        NorthResourceName  string `json:"northResourceName"`
+        NorthResourceValue string `json:"northResourceValue,omitempty"`
+}
+
+// ---- Helper functions for payload extraction ----
+
+// GetSensorDataPayload extracts SensorDataPayload from message
+func (m *MQTTMessage) GetSensorDataPayload() (*SensorDataPayload, error) <span class="cov0" title="0">{
+        if m.Type != TypeSensorData </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("message type is not sensor data: %d", m.Type)
+        }</span>
+        <span class="cov0" title="0">data, err := json.Marshal(m.Payload)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">var payload SensorDataPayload
+        if err := json.Unmarshal(data, &amp;payload); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;payload, nil</span>
+}
+
+// GetCommandPayload extracts CommandPayload from message
+func (m *MQTTMessage) GetCommandPayload() (*CommandPayload, error) <span class="cov0" title="0">{
+        if m.Type != TypeCommand </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("message type is not command: %d", m.Type)
+        }</span>
+        <span class="cov0" title="0">data, err := json.Marshal(m.Payload)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">var payload CommandPayload
+        if err := json.Unmarshal(data, &amp;payload); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;payload, nil</span>
+}
+
+// GetQueryDeviceResponse extracts QueryDeviceResponse from response
+func (r *MQTTResponse) GetQueryDeviceResponse() (*QueryDeviceResponse, error) <span class="cov0" title="0">{
+        if r.Type != TypeQueryDevice </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("response type is not query device: %d", r.Type)
+        }</span>
+        <span class="cov0" title="0">data, err := json.Marshal(r.Payload)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">var payload QueryDeviceResponse
+        if err := json.Unmarshal(data, &amp;payload); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;payload, nil</span>
+}
+
+// GetDeviceAttributePushPayload extracts DeviceAttributePushPayload from message
+func (m *MQTTMessage) GetDeviceAttributePushPayload() (*DeviceAttributePushPayload, error) <span class="cov0" title="0">{
+        if m.Type != TypeDeviceAttributePush </span><span class="cov0" title="0">{
+                return nil, fmt.Errorf("message type is not device attribute push: %d", m.Type)
+        }</span>
+        <span class="cov0" title="0">data, err := json.Marshal(m.Payload)
+        if err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">var payload DeviceAttributePushPayload
+        if err := json.Unmarshal(data, &amp;payload); err != nil </span><span class="cov0" title="0">{
+                return nil, err
+        }</span>
+        <span class="cov0" title="0">return &amp;payload, nil</span>
+}
+</pre>
+		
+		<pre class="file" id="file10" style="display: none">package service
+
+import (
+        "app-modbus-go/internal/pkg/config"
+        "app-modbus-go/internal/pkg/forwardlog"
+        "app-modbus-go/internal/pkg/logger"
+        "app-modbus-go/internal/pkg/mappingmanager"
+        "app-modbus-go/internal/pkg/modbusserver"
+        "app-modbus-go/internal/pkg/mqtt"
+        "context"
+        "errors"
+        "fmt"
+        "os"
+        "os/signal"
+        "sync"
+        "syscall"
+)
+
+// AppService is the main application service
+type AppService struct {
+        appName    string
+        version    string
+        configPath string
+
+        lc            logger.LoggingClient
+        mqttClient    *mqtt.ClientManager
+        mapManage     *mappingmanager.MappingManager
+        mdbsServer    *modbusserver.ModbusServer
+        forwardLogMgr *forwardlog.Manager
+        config        *config.AppConfig
+
+        ctx    context.Context
+        cancel context.CancelFunc
+        wg     sync.WaitGroup
+}
+
+// NewAppService creates a new application service
+func NewAppService(name string, version string) (AppServiceInterface, error) <span class="cov8" title="1">{
+        if name == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("please specify service name")
+        }</span>
+        <span class="cov8" title="1">if version == "" </span><span class="cov8" title="1">{
+                return nil, errors.New("please specify service version")
+        }</span>
+
+        <span class="cov8" title="1">return &amp;AppService{
+                appName: name,
+                version: version,
+        }, nil</span>
+}
+
+// Initialize initializes the service with configuration
+func (s *AppService) Initialize(configPath string) error <span class="cov0" title="0">{
+        s.configPath = configPath
+
+        // Initialize logger first with default level
+        s.lc = logger.NewClient("INFO")
+        s.lc.Info("Initializing service:", s.appName, "version:", s.version)
+
+        // Load configuration
+        cfg, err := config.LoadConfig(configPath)
+        if err != nil </span><span class="cov0" title="0">{
+                // Try default config if file not found
+                s.lc.Warn("Failed to load config file, using defaults:", err.Error())
+                cfg = config.DefaultConfig()
+        }</span>
+        <span class="cov0" title="0">s.config = cfg
+
+        // Update log level from config
+        if err := s.lc.SetLogLevel(cfg.Writable.LogLevel); err != nil </span><span class="cov0" title="0">{
+                s.lc.Warn("Failed to set log level:", err.Error())
+        }</span>
+
+        // Create context
+        <span class="cov0" title="0">s.ctx, s.cancel = context.WithCancel(context.Background())
+
+        // Create MQTT client manager
+        s.mqttClient = mqtt.NewClientManager(
+                cfg.NodeID,
+                mqtt.ClientConfig{
+                        Broker:    cfg.Mqtt.Broker,
+                        ClientID:  cfg.Mqtt.ClientID,
+                        Username:  cfg.Mqtt.Username,
+                        Password:  cfg.Mqtt.Password,
+                        QoS:       byte(cfg.Mqtt.QoS),
+                        KeepAlive: cfg.Mqtt.KeepAlive,
+                },
+                s.lc,
+        )
+
+        // Create mapping manager
+        s.mapManage = mappingmanager.NewMappingManager(s.mqttClient, s.lc, &amp;cfg.Cache)
+
+        // Create forward log manager
+        s.forwardLogMgr = forwardlog.NewManager(s.mqttClient, s.lc)
+
+        // Create Modbus server
+        s.mdbsServer = modbusserver.NewModbusServer(&amp;cfg.Modbus, s.mapManage, s.lc)
+
+        s.lc.Info("Service initialized successfully")
+        return nil</span>
+}
+
+// Run runs the service
+func (s *AppService) Run() error <span class="cov0" title="0">{
+        s.lc.Info("Starting service:", s.appName)
+
+        // Connect MQTT
+        mqttCfg := mqtt.ClientConfig{
+                Broker:    s.config.Mqtt.Broker,
+                ClientID:  s.config.Mqtt.ClientID,
+                Username:  s.config.Mqtt.Username,
+                Password:  s.config.Mqtt.Password,
+                QoS:       byte(s.config.Mqtt.QoS),
+                KeepAlive: s.config.Mqtt.KeepAlive,
+        }
+        if err := s.mqttClient.Connect(mqttCfg); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT connect failed: %w", err)
+        }</span>
+
+        // Register message handlers
+        <span class="cov0" title="0">s.registerMQTTHandlers()
+
+        // Subscribe to topics
+        if err := s.mqttClient.Subscribe(); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("MQTT subscribe failed: %w", err)
+        }</span>
+
+        // Query device attributes from data center
+        <span class="cov0" title="0">if err := s.mapManage.QueryDeviceAttributes(); err != nil </span><span class="cov0" title="0">{
+                s.lc.Warn("Failed to query device attributes:", err.Error())
+                s.lc.Info("Service will continue with empty mappings, waiting for data push")
+        }</span>
+
+        // Start heartbeat
+        <span class="cov0" title="0">s.mqttClient.StartHeartbeat(s.config.Heartbeat.GetInterval())
+
+        // Start cache cleanup
+        s.mapManage.StartCleanup()
+
+        // Start forward log manager
+        s.forwardLogMgr.Start()
+
+        // Start Modbus server
+        if err := s.mdbsServer.Start(s.ctx); err != nil </span><span class="cov0" title="0">{
+                return fmt.Errorf("Modbus server start failed: %w", err)
+        }</span>
+
+        <span class="cov0" title="0">s.lc.Info("Service started successfully")
+
+        // Wait for shutdown signal
+        s.waitForShutdown()
+
+        return nil</span>
+}
+
+// registerMQTTHandlers registers all MQTT message handlers
+func (s *AppService) registerMQTTHandlers() <span class="cov0" title="0">{
+        // Type 1: Heartbeat response
+        s.mqttClient.RegisterResponseHandler(mqtt.TypeHeartbeat, func(resp *mqtt.MQTTResponse) error </span><span class="cov0" title="0">{
+                s.lc.Debug("Heartbeat response received")
+                return nil
+        }</span>)
+
+        // Type 2: Query device response is handled by PublishAndWait
+
+        // Type 3: Device attribute push
+        <span class="cov0" title="0">s.mqttClient.RegisterMessageHandler(mqtt.TypeDeviceAttributePush, func(msg *mqtt.MQTTMessage) error </span><span class="cov0" title="0">{
+                return s.mapManage.HandleAttributeUpdate(msg)
+        }</span>)
+
+        // Type 4: Sensor data
+        <span class="cov0" title="0">s.mqttClient.RegisterMessageHandler(mqtt.TypeSensorData, func(msg *mqtt.MQTTMessage) error </span><span class="cov0" title="0">{
+                return s.mapManage.HandleSensorData(msg)
+        }</span>)
+
+        // Type 6: Command
+        <span class="cov0" title="0">s.mqttClient.RegisterMessageHandler(mqtt.TypeCommand, func(msg *mqtt.MQTTMessage) error </span><span class="cov0" title="0">{
+                return s.handleCommand(msg)
+        }</span>)
+}
+
+// handleCommand handles type=6 command messages
+func (s *AppService) handleCommand(msg *mqtt.MQTTMessage) error <span class="cov0" title="0">{
+        payload, err := msg.GetCommandPayload()
+        if err != nil </span><span class="cov0" title="0">{
+                return err
+        }</span>
+
+        <span class="cov0" title="0">s.lc.Debug(fmt.Sprintf("Received command: type=%s, device=%s, resource=%s",
+                payload.CmdType, payload.CmdContent.NorthDeviceName, payload.CmdContent.NorthResourceName))
+
+        var respPayload *mqtt.CommandResponsePayload
+
+        switch payload.CmdType </span>{
+        case "GET":<span class="cov0" title="0">
+                respPayload = s.handleGetCommand(payload)</span>
+        case "PUT":<span class="cov0" title="0">
+                respPayload = s.handlePutCommand(payload)</span>
+        default:<span class="cov0" title="0">
+                respPayload = &amp;mqtt.CommandResponsePayload{
+                        CmdType:    payload.CmdType,
+                        StatusCode: 400,
+                        CmdContent: mqtt.CommandResponseContent{
+                                NorthDeviceName:   payload.CmdContent.NorthDeviceName,
+                                NorthResourceName: payload.CmdContent.NorthResourceName,
+                        },
+                }</span>
+        }
+
+        <span class="cov0" title="0">resp := mqtt.NewResponse(msg.RequestID, mqtt.TypeCommand, 200, "success", respPayload)
+        return s.mqttClient.PublishResponse(resp)</span>
+}
+
+// handleGetCommand handles GET commands
+func (s *AppService) handleGetCommand(payload *mqtt.CommandPayload) *mqtt.CommandResponsePayload <span class="cov0" title="0">{
+        dm, ok := s.mapManage.GetDeviceMapping(payload.CmdContent.NorthDeviceName)
+        if !ok </span><span class="cov0" title="0">{
+                return &amp;mqtt.CommandResponsePayload{
+                        CmdType:    "GET",
+                        StatusCode: 404,
+                        CmdContent: mqtt.CommandResponseContent{
+                                NorthDeviceName:   payload.CmdContent.NorthDeviceName,
+                                NorthResourceName: payload.CmdContent.NorthResourceName,
+                        },
+                }
+        }</span>
+
+        // Find the resource and its Modbus address
+        <span class="cov0" title="0">for _, rm := range dm.Resources </span><span class="cov0" title="0">{
+                if rm.NorthResource != nil &amp;&amp; rm.NorthResource.Name == payload.CmdContent.NorthResourceName </span><span class="cov0" title="0">{
+                        addr := rm.NorthResource.OtherParameters.Modbus.Address
+                        cachedData, ok := s.mapManage.GetCachedValue(addr)
+                        if !ok </span><span class="cov0" title="0">{
+                                return &amp;mqtt.CommandResponsePayload{
+                                        CmdType:    "GET",
+                                        StatusCode: 404,
+                                        CmdContent: mqtt.CommandResponseContent{
+                                                NorthDeviceName:   payload.CmdContent.NorthDeviceName,
+                                                NorthResourceName: payload.CmdContent.NorthResourceName,
+                                        },
+                                }
+                        }</span>
+
+                        <span class="cov0" title="0">return &amp;mqtt.CommandResponsePayload{
+                                CmdType:    "GET",
+                                StatusCode: 200,
+                                CmdContent: mqtt.CommandResponseContent{
+                                        NorthDeviceName:    payload.CmdContent.NorthDeviceName,
+                                        NorthResourceName:  payload.CmdContent.NorthResourceName,
+                                        NorthResourceValue: fmt.Sprintf("%v", cachedData.Value),
+                                },
+                        }</span>
+                }
+        }
+
+        <span class="cov0" title="0">return &amp;mqtt.CommandResponsePayload{
+                CmdType:    "GET",
+                StatusCode: 404,
+                CmdContent: mqtt.CommandResponseContent{
+                        NorthDeviceName:   payload.CmdContent.NorthDeviceName,
+                        NorthResourceName: payload.CmdContent.NorthResourceName,
+                },
+        }</span>
+}
+
+// handlePutCommand handles PUT commands
+func (s *AppService) handlePutCommand(payload *mqtt.CommandPayload) *mqtt.CommandResponsePayload <span class="cov8" title="1">{
+        // For now, just acknowledge the PUT command
+        // In a full implementation, this would write to the device via MQTT
+        s.lc.Info(fmt.Sprintf("PUT command: %s/%s = %s",
+                payload.CmdContent.NorthDeviceName,
+                payload.CmdContent.NorthResourceName,
+                payload.CmdContent.NorthResourceValue))
+
+        return &amp;mqtt.CommandResponsePayload{
+                CmdType:    "PUT",
+                StatusCode: 200,
+                CmdContent: mqtt.CommandResponseContent{
+                        NorthDeviceName:    payload.CmdContent.NorthDeviceName,
+                        NorthResourceName:  payload.CmdContent.NorthResourceName,
+                        NorthResourceValue: payload.CmdContent.NorthResourceValue,
+                },
+        }
+}</span>
+
+// waitForShutdown waits for a shutdown signal
+func (s *AppService) waitForShutdown() <span class="cov0" title="0">{
+        sigCh := make(chan os.Signal, 1)
+        signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
+
+        sig := &lt;-sigCh
+        s.lc.Info("Received signal:", sig.String())
+        s.Stop()
+}</span>
+
+// Stop stops the service
+func (s *AppService) Stop() error <span class="cov0" title="0">{
+        s.lc.Info("Stopping service:", s.appName)
+
+        // Cancel context
+        if s.cancel != nil </span><span class="cov0" title="0">{
+                s.cancel()
+        }</span>
+
+        // Stop Modbus server
+        <span class="cov0" title="0">if s.mdbsServer != nil </span><span class="cov0" title="0">{
+                s.mdbsServer.Stop()
+        }</span>
+
+        // Stop forward log manager
+        <span class="cov0" title="0">if s.forwardLogMgr != nil </span><span class="cov0" title="0">{
+                s.forwardLogMgr.Stop()
+        }</span>
+
+        // Stop mapping manager
+        <span class="cov0" title="0">if s.mapManage != nil </span><span class="cov0" title="0">{
+                s.mapManage.Stop()
+        }</span>
+
+        // Disconnect MQTT
+        <span class="cov0" title="0">if s.mqttClient != nil </span><span class="cov0" title="0">{
+                s.mqttClient.Disconnect()
+        }</span>
+
+        <span class="cov0" title="0">s.lc.Info("Service stopped successfully")
+        return nil</span>
+}
+
+// Getter methods
+
+// GetLoggingClient returns the logging client
+func (s *AppService) GetLoggingClient() logger.LoggingClient <span class="cov8" title="1">{
+        return s.lc
+}</span>
+
+// GetMappingManager returns the mapping manager
+func (s *AppService) GetMappingManager() mappingmanager.MappingManagerInterface <span class="cov8" title="1">{
+        return s.mapManage
+}</span>
+
+// GetModbusServer returns the Modbus server
+func (s *AppService) GetModbusServer() modbusserver.ModbusServerInterface <span class="cov8" title="1">{
+        return s.mdbsServer
+}</span>
+
+// GetMQTTClient returns the MQTT client manager
+func (s *AppService) GetMQTTClient() *mqtt.ClientManager <span class="cov8" title="1">{
+        return s.mqttClient
+}</span>
+
+// GetForwardLogManager returns the forward log manager
+func (s *AppService) GetForwardLogManager() *forwardlog.Manager <span class="cov8" title="1">{
+        return s.forwardLogMgr
+}</span>
+
+// GetAppConfig returns the application configuration
+func (s *AppService) GetAppConfig() *config.AppConfig <span class="cov8" title="1">{
+        return s.config
+}</span>
+
+// GetContext returns the service context
+func (s *AppService) GetContext() context.Context <span class="cov8" title="1">{
+        return s.ctx
+}</span>
+</pre>
+		
+		<pre class="file" id="file11" style="display: none">package startup
+
+import (
+        "app-modbus-go/internal/pkg/service"
+        "flag"
+        "fmt"
+        "os"
+        "path/filepath"
+)
+
+// BootStrap initializes and runs the application
+func BootStrap(appName string, version string) <span class="cov0" title="0">{
+        // Parse command line flags
+        configPath := flag.String("c", "", "Path to configuration file")
+        flag.Parse()
+
+        // Determine config path
+        var cfgPath string
+        if *configPath != "" </span><span class="cov0" title="0">{
+                cfgPath = *configPath
+        }</span> else<span class="cov0" title="0"> {
+                // Default: look for res/configuration.yaml relative to executable
+                exe, err := os.Executable()
+                if err != nil </span><span class="cov0" title="0">{
+                        fmt.Fprintf(os.Stderr, "Failed to get executable path: %v\n", err)
+                        os.Exit(-1)
+                }</span>
+                <span class="cov0" title="0">cfgPath = filepath.Join(filepath.Dir(exe), "res", "configuration.yaml")</span>
+        }
+
+        <span class="cov0" title="0">fmt.Printf("Bootstrapping application: %s Version: %s\n", appName, version)
+
+        // Create application service
+        appService, err := service.NewAppService(appName, version)
+        if err != nil </span><span class="cov0" title="0">{
+                fmt.Fprintf(os.Stderr, "Failed to create application service: %v\n", err)
+                os.Exit(-1)
+        }</span>
+
+        // Initialize with configuration
+        <span class="cov0" title="0">if err := appService.Initialize(cfgPath); err != nil </span><span class="cov0" title="0">{
+                fmt.Fprintf(os.Stderr, "Failed to initialize application: %v\n", err)
+                os.Exit(-1)
+        }</span>
+
+        // Run the application
+        <span class="cov0" title="0">if err := appService.Run(); err != nil </span><span class="cov0" title="0">{
+                appService.GetLoggingClient().Error("Application run failed:", err)
+                os.Exit(-1)
+        }</span>
+
+        <span class="cov0" title="0">os.Exit(0)</span>
+}
+</pre>
+		
+		</div>
+	</body>
+	<script>
+	(function() {
+		var files = document.getElementById('files');
+		var visible;
+		files.addEventListener('change', onChange, false);
+		function select(part) {
+			if (visible)
+				visible.style.display = 'none';
+			visible = document.getElementById(part);
+			if (!visible)
+				return;
+			files.value = part;
+			visible.style.display = 'block';
+			location.hash = part;
+		}
+		function onChange() {
+			select(files.value);
+			window.scrollTo(0, 0);
+		}
+		if (location.hash != "") {
+			select(location.hash.substr(1));
+		}
+		if (!visible) {
+			select("file0");
+		}
+	})();
+	</script>
+</html>

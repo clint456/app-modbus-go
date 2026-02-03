@@ -6,6 +6,9 @@ services:
       - /app-modbus-go
       - -cp=keeper.http://edgex-core-keeper:59890
       - --registry
+      - -cd=/res
+      - -cf=configuration.yaml
+      - -o
     container_name: app-modbus-go
     environment:
       EDGEX_SECURITY_SECRET_STORE: "false"
