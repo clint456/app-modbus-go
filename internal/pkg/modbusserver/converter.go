@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math"
+	"strings"
 )
 
 // ByteOrder 定义多字节值的字节顺序
@@ -28,6 +29,9 @@ func NewConverter(order ByteOrder) *Converter {
 func (c *Converter) ToRegisters(value interface{}, valueType string, scale, offset float64) ([]byte, error) {
 	// 对数值应用缩放和偏移
 	scaledValue := c.applyScaleOffset(value, scale, offset)
+
+	// 统一转换为小写进行比较，支持"Uint64"和"uint64"等不同写法
+	valueType = strings.ToLower(valueType)
 
 	switch valueType {
 	case "bool":
@@ -56,6 +60,9 @@ func (c *Converter) ToRegisters(value interface{}, valueType string, scale, offs
 
 // GetRegisterCount 返回值类型所需的寄存器数量
 func (c *Converter) GetRegisterCount(valueType string) int {
+	// 统一转换为小写进行比较
+	valueType = strings.ToLower(valueType)
+
 	switch valueType {
 	case "bool", "int16", "uint16":
 		return 1

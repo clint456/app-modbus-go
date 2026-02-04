@@ -230,40 +230,87 @@ func (s *ModbusServer) valueToBool(value interface{}) bool {
 
 // readRegisters 从映射管理器缓存中读取寄存器值
 func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte, error) {
-	// 获取所有请求地址的缓存数据
-	cachedData, err := s.mappingManager.GetCachedRegisters(startAddr, quantity)
-	if err != nil {
-		return nil, err
-	}
+	s.lc.Debug(fmt.Sprintf("[readRegisters] 开始读取寄存器 - 起始地址:%d, 数量:%d", startAddr, quantity))
 
 	// 构建响应:字节数+寄存器值
 	result := make([]byte, 1+quantity*2)
 	result[0] = byte(quantity * 2) // 字节数
 
+	// 用于收集本次请求读取的所有设备数据，以便统一上报转发日志
+	forwardedData := make(map[string]map[string]interface{}) // deviceName -> {resourceName: value}
+
 	offset := 1
-	for i := uint16(0); i < quantity; i++ {
-		data := cachedData[i]
-		if data == nil {
-			// 该地址没有数据,返回零
+	currentReg := uint16(0) // 当前处理的寄存器偏移（相对于startAddr）
+
+	for currentReg < quantity {
+		queryAddr := startAddr + currentReg
+
+		// 直接从缓存查询当前地址
+		data, ok := s.mappingManager.GetCachedValue(queryAddr)
+
+		if !ok || data == nil {
+			// 该地址没有数据,返回零值（单个寄存器）
+			s.lc.Debug(fmt.Sprintf("[readRegisters] 地址 %d: 无缓存数据，返回零值", queryAddr))
 			result[offset] = 0
 			result[offset+1] = 0
+			offset += 2
+			currentReg++
 		} else {
+			// 使用缓存数据自身的地址信息
+			dataAddr := data.ModbusAddress
+			
+			// 计算该数据类型需要的寄存器数量
+			registerCount := s.converter.GetRegisterCount(data.ValueType)
+			s.lc.Debug(fmt.Sprintf("[readRegisters] 地址 %d (缓存地址:%d): 原始值=%v, 类型='%s' (占用%d个寄存器), Scale=%.2f, Offset=%.2f",
+				queryAddr, dataAddr, data.Value, data.ValueType, registerCount, data.Scale, data.Offset))
+
 			// 将值转换为字节
 			bytes, err := s.converter.ToRegisters(data.Value, data.ValueType, data.Scale, data.Offset)
 			if err != nil {
-				s.lc.Warn(fmt.Sprintf("Conversion error for addr %d: %s", startAddr+i, err.Error()))
+				s.lc.Warn(fmt.Sprintf("[readRegisters] 地址 %d: 类型转换失败 - %s, 返回零值", dataAddr, err.Error()))
 				result[offset] = 0
 				result[offset+1] = 0
+				offset += 2
+				currentReg++
 			} else {
-				// 复制前2个字节(一个寄存器)
-				if len(bytes) >= 2 {
-					copy(result[offset:offset+2], bytes[:2])
+				// 计算实际需要复制的字节数（不超过剩余空间）
+				remainingRegs := quantity - currentReg
+				regsToFill := uint16(registerCount)
+				if regsToFill > remainingRegs {
+					regsToFill = remainingRegs
 				}
+				bytesToCopy := int(regsToFill * 2)
+
+				if len(bytes) >= bytesToCopy {
+					copy(result[offset:offset+bytesToCopy], bytes[:bytesToCopy])
+					s.lc.Debug(fmt.Sprintf("[readRegisters] 地址 %d-%d: 转换成功 - 复制了%d个寄存器(%d字节): %X",
+						dataAddr, dataAddr+regsToFill-1, regsToFill, bytesToCopy, bytes[:bytesToCopy]))
+					
+					// 收集成功读取的数据（按设备分组）
+					if forwardedData[data.NorthDevName] == nil {
+						forwardedData[data.NorthDevName] = make(map[string]interface{})
+					}
+					forwardedData[data.NorthDevName][data.ResourceName] = data.Value
+				} else {
+					s.lc.Warn(fmt.Sprintf("[readRegisters] 地址 %d: 转换字节数不足 (需要%d, 实际%d), 填充零值",
+						dataAddr, bytesToCopy, len(bytes)))
+					for j := 0; j < bytesToCopy; j++ {
+						result[offset+j] = 0
+					}
+				}
+
+				offset += bytesToCopy
+				currentReg += regsToFill
 			}
 		}
-		offset += 2
 	}
 
+	// 统一记录转发日志（一次Modbus请求对应一个日志上报）
+	for deviceName, deviceData := range forwardedData {
+		s.mappingManager.LogDataForward(deviceName, deviceData)
+	}
+
+	s.lc.Debug(fmt.Sprintf("[readRegisters] 完成寄存器读取 - 响应字节数:%d", len(result)))
 	return result, nil
 }
 

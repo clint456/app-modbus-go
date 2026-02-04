@@ -146,8 +146,10 @@ type QueryDeviceResponse struct {
 }
 
 // DeviceAttributePushPayload for type=3 device attribute push
+// Note: This uses the same format as QueryDeviceResponse (cmd + result)
 type DeviceAttributePushPayload struct {
-	Devices []*DeviceMapping `json:"devices"`
+	Cmd    string           `json:"cmd"`
+	Result []*DeviceMapping `json:"result"`
 }
 
 // SensorDataPayload for type=4 sensor data messages

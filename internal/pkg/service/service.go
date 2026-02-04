@@ -94,6 +94,9 @@ func (s *AppService) Initialize(configPath string) error {
 	// 创建前向日志管理器
 	s.forwardLogMgr = forwardlog.NewManager(s.mqttClient, s.lc)
 
+	// 将前向日志管理器设置到映射管理器
+	s.mapManage.SetForwardLogHandler(s.forwardLogMgr)
+
 	// 创建Modbus服务器
 	s.mdbsServer = modbusserver.NewModbusServer(&cfg.Modbus, s.mapManage, s.lc)
 

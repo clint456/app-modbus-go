@@ -36,6 +36,10 @@ type MappingManagerInterface interface {
 	// HandleAttributeUpdate processes device attribute push (type=3)
 	HandleAttributeUpdate(msg *mqtt.MQTTMessage) error
 
+	// LogDataForward 记录数据转发日志（当Modbus客户端读取数据时调用）
+	// data: 本次请求读取的所有资源数据 map[resourceName]value
+	LogDataForward(northDeviceName string, data map[string]interface{})
+
 	// StartCleanup starts periodic cache cleanup
 	StartCleanup()
 

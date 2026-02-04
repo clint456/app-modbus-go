@@ -9,21 +9,21 @@ import (
 	"time"
 )
 
-// ForwardLogHandler 定义前向日志处理的接口
+// ForwardLogHandler defines the interface for forward log handling
 type ForwardLogHandler interface {
 	LogSuccess(northDeviceName string, data map[string]interface{})
 	LogFailure(northDeviceName string, data map[string]interface{})
 }
 
-// MappingManager 管理设备到Modbus地址的映射和数据缓存
+// MappingManager manages device-to-Modbus address mappings and data cache
 type MappingManager struct {
-	// 按北向设备名称索引的设备映射
+	// Device mappings indexed by north device name
 	deviceMappings map[string]*mqtt.DeviceMapping
 
-	// 按Modbus地址索引的资源映射
+	// Resource mappings indexed by Modbus address
 	addressMappings map[uint16]*addressIndex
 
-	// 数据缓存
+	// Data cache
 	cache *Cache
 
 	mqttClient        *mqtt.ClientManager
@@ -33,33 +33,33 @@ type MappingManager struct {
 	mu                sync.RWMutex
 }
 
-// addressIndex 将Modbus地址映射到其资源映射和设备名称
+// addressIndex maps a Modbus address to its resource mapping and device name
 type addressIndex struct {
 	DeviceName      string
 	ResourceMapping *mqtt.ResourceMapping
 }
 
-// NewMappingManager 创建新的MappingManager
+// NewMappingManager creates a new MappingManager
 func NewMappingManager(mqttClient *mqtt.ClientManager, lc logger.LoggingClient, cacheConfig *config.CacheConfig) *MappingManager {
 	return &MappingManager{
 		deviceMappings:    make(map[string]*mqtt.DeviceMapping),
 		addressMappings:   make(map[uint16]*addressIndex),
 		cache:             NewCache(cacheConfig.GetDefaultTTL()),
 		mqttClient:        mqttClient,
-		forwardLogHandler: nil, // 可选,可以稍后设置
+		forwardLogHandler: nil, // Optional, can be set later
 		lc:                lc,
 		config:            cacheConfig,
 	}
 }
 
-// SetForwardLogHandler 设置前向日志处理程序
+// SetForwardLogHandler sets the forward log handler
 func (m *MappingManager) SetForwardLogHandler(handler ForwardLogHandler) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.forwardLogHandler = handler
 }
 
-// QueryDeviceAttributes 向数据中心发送type=2查询并等待响应
+// QueryDeviceAttributes sends a type=2 query to data center and waits for response
 func (m *MappingManager) QueryDeviceAttributes() error {
 	m.lc.Info("Querying device attributes from data center...")
 
@@ -78,7 +78,7 @@ func (m *MappingManager) QueryDeviceAttributes() error {
 	return m.HandleQueryResponse(resp)
 }
 
-// HandleQueryResponse 处理查询设备响应(type=2)
+// HandleQueryResponse processes query device response (type=2)
 func (m *MappingManager) HandleQueryResponse(resp *mqtt.MQTTResponse) error {
 	qdr, err := resp.GetQueryDeviceResponse()
 	if err != nil {
@@ -89,57 +89,88 @@ func (m *MappingManager) HandleQueryResponse(resp *mqtt.MQTTResponse) error {
 	return m.UpdateMappings(qdr.Result)
 }
 
-// HandleAttributeUpdate 处理设备属性推送(type=3)
+// HandleAttributeUpdate processes device attribute push (type=3)
 func (m *MappingManager) HandleAttributeUpdate(msg *mqtt.MQTTMessage) error {
 	payload, err := msg.GetDeviceAttributePushPayload()
 	if err != nil {
 		return fmt.Errorf("failed to parse attribute update: %w", err)
 	}
 
-	m.lc.Info(fmt.Sprintf("Received device attribute update: %d devices", len(payload.Devices)))
-	return m.UpdateMappings(payload.Devices)
+	m.lc.Info(fmt.Sprintf("Received device attribute update: %d devices", len(payload.Result)))
+	return m.UpdateMappings(payload.Result)
 }
 
-// UpdateMappings 使用验证更新设备到Modbus的映射
+// UpdateMappings updates the device-to-Modbus mappings with validation
 func (m *MappingManager) UpdateMappings(mappings []*mqtt.DeviceMapping) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
-	// 清除现有映射
+	// Clear existing mappings
 	m.deviceMappings = make(map[string]*mqtt.DeviceMapping)
 	newAddressMappings := make(map[uint16]*addressIndex)
+
+	validResourceCount := 0
+	skippedResourceCount := 0
 
 	for _, dm := range mappings {
 		m.deviceMappings[dm.NorthDeviceName] = dm
 
 		for _, rm := range dm.Resources {
-			if rm.NorthResource != nil {
-				addr := rm.NorthResource.OtherParameters.Modbus.Address
-
-				// 检查重复的地址映射
-				if existing, ok := newAddressMappings[addr]; ok {
-					m.lc.Warn(fmt.Sprintf("Duplicate Modbus address %d detected: %s/%s conflicts with %s/%s",
-						addr, dm.NorthDeviceName, rm.NorthResource.Name,
-						existing.DeviceName, existing.ResourceMapping.NorthResource.Name))
-				}
-
-				newAddressMappings[addr] = &addressIndex{
-					DeviceName:      dm.NorthDeviceName,
-					ResourceMapping: rm,
-				}
-				m.lc.Debug(fmt.Sprintf("Mapped address %d -> %s/%s",
-					addr, dm.NorthDeviceName, rm.NorthResource.Name))
+			// Validate resource completeness
+			if rm.NorthResource == nil {
+				m.lc.Warn(fmt.Sprintf("Skipping resource in device %s: NorthResource is nil", dm.NorthDeviceName))
+				skippedResourceCount++
+				continue
 			}
+			if rm.SouthResource == nil {
+				m.lc.Warn(fmt.Sprintf("Skipping resource %s in device %s: SouthResource is nil",
+					rm.NorthResource.Name, dm.NorthDeviceName))
+				skippedResourceCount++
+				continue
+			}
+
+			addr := rm.NorthResource.OtherParameters.Modbus.Address
+
+			// Check for duplicate address mapping - keep first, skip duplicates
+			if existing, ok := newAddressMappings[addr]; ok {
+				m.lc.Warn(fmt.Sprintf("Duplicate Modbus address %d detected: %s/%s conflicts with %s/%s (keeping first, skipping duplicate)",
+					addr, dm.NorthDeviceName, rm.NorthResource.Name,
+					existing.DeviceName, existing.ResourceMapping.NorthResource.Name))
+				skippedResourceCount++
+				continue
+			}
+
+			// Warn about name mismatches
+			if rm.NorthResource.Name != rm.SouthResource.Name {
+				m.lc.Warn(fmt.Sprintf("Resource name mismatch for address %d: northName=%s, southName=%s (will match by both names)",
+					addr, rm.NorthResource.Name, rm.SouthResource.Name))
+			}
+
+			// Warn about type mismatches
+			if rm.NorthResource.ValueType != rm.SouthResource.ValueType {
+				m.lc.Warn(fmt.Sprintf("Value type mismatch for resource %s at address %d: northType=%s, southType=%s (may cause conversion issues)",
+					rm.NorthResource.Name, addr, rm.NorthResource.ValueType, rm.SouthResource.ValueType))
+			}
+
+			newAddressMappings[addr] = &addressIndex{
+				DeviceName:      dm.NorthDeviceName,
+				ResourceMapping: rm,
+			}
+			m.lc.Debug(fmt.Sprintf("Mapped address %d -> %s/%s (northName=%s, southName=%s, northType=%s, southType=%s)",
+				addr, dm.NorthDeviceName, rm.NorthResource.Name,
+				rm.NorthResource.Name, rm.SouthResource.Name,
+				rm.NorthResource.ValueType, rm.SouthResource.ValueType))
+			validResourceCount++
 		}
 	}
 
 	m.addressMappings = newAddressMappings
-	m.lc.Info(fmt.Sprintf("Updated mappings: %d devices, %d addresses",
-		len(m.deviceMappings), len(m.addressMappings)))
+	m.lc.Info(fmt.Sprintf("Updated mappings: %d devices, %d addresses (valid: %d, skipped: %d)",
+		len(m.deviceMappings), len(m.addressMappings), validResourceCount, skippedResourceCount))
 	return nil
 }
 
-// GetMappingByAddress 返回Modbus地址的资源映射
+// GetMappingByAddress returns the resource mapping for a Modbus address
 func (m *MappingManager) GetMappingByAddress(addr uint16) (*mqtt.ResourceMapping, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -151,7 +182,7 @@ func (m *MappingManager) GetMappingByAddress(addr uint16) (*mqtt.ResourceMapping
 	return idx.ResourceMapping, true
 }
 
-// GetDeviceMapping 按北向设备名称返回设备映射
+// GetDeviceMapping returns the device mapping by north device name
 func (m *MappingManager) GetDeviceMapping(northDeviceName string) (*mqtt.DeviceMapping, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
@@ -160,7 +191,7 @@ func (m *MappingManager) GetDeviceMapping(northDeviceName string) (*mqtt.DeviceM
 	return dm, ok
 }
 
-// UpdateCache 从传感器数据更新数据缓存
+// UpdateCache updates the data cache from sensor data
 func (m *MappingManager) UpdateCache(northDevName string, data map[string]interface{}) error {
 	m.mu.RLock()
 	dm, ok := m.deviceMappings[northDevName]
@@ -170,20 +201,37 @@ func (m *MappingManager) UpdateCache(northDevName string, data map[string]interf
 		return fmt.Errorf("unknown north device: %s", northDevName)
 	}
 
+	// Log incoming data keys for debugging
+	dataKeys := make([]string, 0, len(data))
+	for k := range data {
+		dataKeys = append(dataKeys, k)
+	}
+	m.lc.Debug(fmt.Sprintf("UpdateCache for device %s: incoming data keys=%v", northDevName, dataKeys))
+
 	updatedCount := 0
 	for _, rm := range dm.Resources {
 		if rm.NorthResource == nil || rm.SouthResource == nil {
+			m.lc.Debug(fmt.Sprintf("Skipping resource: NorthResource or SouthResource is nil"))
 			continue
 		}
 
-		// 尝试按南向资源名称查找值
+		// Log what we're looking for
+		m.lc.Debug(fmt.Sprintf("Looking for resource: southName=%s, northName=%s, modbusAddr=%d",
+			rm.SouthResource.Name, rm.NorthResource.Name, rm.NorthResource.OtherParameters.Modbus.Address))
+
+		// Try to find the value by south resource name
 		val, ok := data[rm.SouthResource.Name]
 		if !ok {
-			// 也尝试北向资源名称
+			// Also try north resource name
 			val, ok = data[rm.NorthResource.Name]
 			if !ok {
+				m.lc.Debug(fmt.Sprintf("No match found for resource: tried southName=%s and northName=%s",
+					rm.SouthResource.Name, rm.NorthResource.Name))
 				continue
 			}
+			m.lc.Debug(fmt.Sprintf("Matched by northName=%s, value=%v", rm.NorthResource.Name, val))
+		} else {
+			m.lc.Debug(fmt.Sprintf("Matched by southName=%s, value=%v", rm.SouthResource.Name, val))
 		}
 
 		addr := rm.NorthResource.OtherParameters.Modbus.Address
@@ -203,17 +251,17 @@ func (m *MappingManager) UpdateCache(northDevName string, data map[string]interf
 	return nil
 }
 
-// GetCachedValue 返回Modbus地址的缓存值
+// GetCachedValue returns the cached value for a Modbus address
 func (m *MappingManager) GetCachedValue(addr uint16) (*CachedData, bool) {
 	return m.cache.Get(addr)
 }
 
-// GetCachedRegisters 读取多个连续的寄存器
+// GetCachedRegisters reads multiple consecutive registers
 func (m *MappingManager) GetCachedRegisters(startAddr uint16, quantity uint16) ([]*CachedData, error) {
 	return m.cache.GetRange(startAddr, quantity)
 }
 
-// HandleSensorData 处理传入的传感器数据(type=4)
+// HandleSensorData processes incoming sensor data (type=4)
 func (m *MappingManager) HandleSensorData(msg *mqtt.MQTTMessage) error {
 	payload, err := msg.GetSensorDataPayload()
 	if err != nil {
@@ -222,28 +270,28 @@ func (m *MappingManager) HandleSensorData(msg *mqtt.MQTTMessage) error {
 
 	m.lc.Debug(fmt.Sprintf("Received sensor data from device: %s", payload.NorthDeviceName))
 
-	if err := m.UpdateCache(payload.NorthDeviceName, payload.Data); err != nil {
-		// 如果处理程序可用,记录失败
-		m.mu.RLock()
-		handler := m.forwardLogHandler
-		m.mu.RUnlock()
-		if handler != nil {
-			handler.LogFailure(payload.NorthDeviceName, payload.Data)
-		}
-		return err
-	}
+	// 只更新缓存，不立即记录转发日志
+	// 转发日志应该在Modbus客户端实际读取数据时才记录
+	return m.UpdateCache(payload.NorthDeviceName, payload.Data)
+}
 
-	// 如果处理程序可用,记录成功
+// LogDataForward 记录数据转发日志（当Modbus客户端读取数据时调用）
+// data: 本次Modbus请求读取的所有资源数据 map[resourceName]value
+func (m *MappingManager) LogDataForward(northDeviceName string, data map[string]interface{}) {
+	if len(data) == 0 {
+		return // 没有数据不上报
+	}
+	
 	m.mu.RLock()
 	handler := m.forwardLogHandler
 	m.mu.RUnlock()
+	
 	if handler != nil {
-		handler.LogSuccess(payload.NorthDeviceName, payload.Data)
+		handler.LogSuccess(northDeviceName, data)
 	}
-	return nil
 }
 
-// StartCleanup 启动定期缓存清理
+// StartCleanup starts periodic cache cleanup
 func (m *MappingManager) StartCleanup() {
 	m.cache.StartPeriodicCleanup(m.config.GetCleanupInterval(), func(count int) {
 		m.lc.Debug(fmt.Sprintf("Cache cleanup: removed %d expired entries", count))
@@ -251,7 +299,7 @@ func (m *MappingManager) StartCleanup() {
 	m.lc.Info("Cache cleanup started")
 }
 
-// Stop 停止映射管理器
+// Stop stops the mapping manager
 func (m *MappingManager) Stop() {
 	m.cache.Stop()
 }
