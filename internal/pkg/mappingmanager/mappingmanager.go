@@ -281,11 +281,11 @@ func (m *MappingManager) LogDataForward(northDeviceName string, data map[string]
 	if len(data) == 0 {
 		return // 没有数据不上报
 	}
-	
+
 	m.mu.RLock()
 	handler := m.forwardLogHandler
 	m.mu.RUnlock()
-	
+
 	if handler != nil {
 		handler.LogSuccess(northDeviceName, data)
 	}

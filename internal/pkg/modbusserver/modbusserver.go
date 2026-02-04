@@ -258,7 +258,7 @@ func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte,
 		} else {
 			// 使用缓存数据自身的地址信息
 			dataAddr := data.ModbusAddress
-			
+
 			// 计算该数据类型需要的寄存器数量
 			registerCount := s.converter.GetRegisterCount(data.ValueType)
 			s.lc.Debug(fmt.Sprintf("[readRegisters] 地址 %d (缓存地址:%d): 原始值=%v, 类型='%s' (占用%d个寄存器), Scale=%.2f, Offset=%.2f",
@@ -285,7 +285,7 @@ func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte,
 					copy(result[offset:offset+bytesToCopy], bytes[:bytesToCopy])
 					s.lc.Debug(fmt.Sprintf("[readRegisters] 地址 %d-%d: 转换成功 - 复制了%d个寄存器(%d字节): %X",
 						dataAddr, dataAddr+regsToFill-1, regsToFill, bytesToCopy, bytes[:bytesToCopy]))
-					
+
 					// 收集成功读取的数据（按设备分组）
 					if forwardedData[data.NorthDevName] == nil {
 						forwardedData[data.NorthDevName] = make(map[string]interface{})
