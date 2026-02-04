@@ -13,7 +13,7 @@ import (
 	"github.com/tbrandon/mbserver"
 )
 
-// ModbusServer implements the Modbus TCP server
+// ModbusServer 实现Modbus TCP服务器
 type ModbusServer struct {
 	config         *config.ModbusConfig
 	server         *mbserver.Server
@@ -25,7 +25,7 @@ type ModbusServer struct {
 	cancel         context.CancelFunc
 }
 
-// NewModbusServer creates a new Modbus TCP server
+// NewModbusServer 创建新的Modbus TCP服务器
 func NewModbusServer(
 	cfg *config.ModbusConfig,
 	mappingManager mappingmanager.MappingManagerInterface,
@@ -39,7 +39,7 @@ func NewModbusServer(
 	}
 }
 
-// Start starts the Modbus TCP server
+// Start 启动Modbus TCP服务器
 func (s *ModbusServer) Start(ctx context.Context) error {
 	if s.running.Load() {
 		return fmt.Errorf("modbus server already running")
@@ -47,34 +47,34 @@ func (s *ModbusServer) Start(ctx context.Context) error {
 
 	s.ctx, s.cancel = context.WithCancel(ctx)
 
-	// Create Modbus server
+	// 创建Modbus服务器
 	s.server = mbserver.NewServer()
 
-	// Register handlers for reading coils (0x01)
+	// 注册读取线圈(0x01)的处理程序
 	s.server.RegisterFunctionHandler(1, s.handleReadCoils)
 
-	// Register handlers for reading discrete inputs (0x02)
+	// 注册读取离散输入(0x02)的处理程序
 	s.server.RegisterFunctionHandler(2, s.handleReadDiscreteInputs)
 
-	// Register handlers for reading holding registers (0x03)
+	// 注册读取保持寄存器(0x03)的处理程序
 	s.server.RegisterFunctionHandler(3, s.handleReadHoldingRegisters)
 
-	// Register handlers for reading input registers (0x04)
+	// 注册读取输入寄存器(0x04)的处理程序
 	s.server.RegisterFunctionHandler(4, s.handleReadInputRegisters)
 
-	// Register handler for writing single coil (0x05)
+	// 注册写入单个线圈(0x05)的处理程序
 	s.server.RegisterFunctionHandler(5, s.handleWriteSingleCoil)
 
-	// Register handler for writing single register (0x06)
+	// 注册写入单个寄存器(0x06)的处理程序
 	s.server.RegisterFunctionHandler(6, s.handleWriteSingleRegister)
 
-	// Register handler for writing multiple coils (0x0F)
+	// 注册写入多个线圈(0x0F)的处理程序
 	s.server.RegisterFunctionHandler(15, s.handleWriteMultipleCoils)
 
-	// Register handler for writing multiple registers (0x10)
+	// 注册写入多个寄存器(0x10)的处理程序
 	s.server.RegisterFunctionHandler(16, s.handleWriteMultipleRegisters)
 
-	// Start listener based on configured type
+	// 根据配置类型启动监听器
 	var err error
 	switch s.config.Type {
 	case "TCP":
@@ -101,7 +101,7 @@ func (s *ModbusServer) Start(ctx context.Context) error {
 	return nil
 }
 
-// handleReadCoils handles function code 0x01
+// handleReadCoils 处理功能码0x01
 func (s *ModbusServer) handleReadCoils(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 4 {
@@ -117,7 +117,7 @@ func (s *ModbusServer) handleReadCoils(srv *mbserver.Server, frame mbserver.Fram
 
 	s.lc.Debug(fmt.Sprintf("Read coils: addr=%d, quantity=%d", startAddr, quantity))
 
-	// Read coil values from cache
+	// 从缓存中读取线圈值
 	result, err := s.readCoils(startAddr, quantity)
 	if err != nil {
 		s.lc.Error(fmt.Sprintf("Read coils error: %s", err.Error()))
@@ -127,13 +127,13 @@ func (s *ModbusServer) handleReadCoils(srv *mbserver.Server, frame mbserver.Fram
 	return result, &mbserver.Success
 }
 
-// handleReadDiscreteInputs handles function code 0x02
+// handleReadDiscreteInputs 处理功能码0x02
 func (s *ModbusServer) handleReadDiscreteInputs(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
-	// Discrete inputs are handled the same as coils in this implementation
+	// 在此实现中,离散输入的处理方式与线圈相同
 	return s.handleReadCoils(srv, frame)
 }
 
-// handleReadHoldingRegisters handles function code 0x03
+// handleReadHoldingRegisters 处理功能码0x03
 func (s *ModbusServer) handleReadHoldingRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 4 {
@@ -145,7 +145,7 @@ func (s *ModbusServer) handleReadHoldingRegisters(srv *mbserver.Server, frame mb
 
 	s.lc.Debug(fmt.Sprintf("Read holding registers: addr=%d, quantity=%d", startAddr, quantity))
 
-	// Read from cache
+	// 从缓存中读取
 	result, err := s.readRegisters(startAddr, quantity)
 	if err != nil {
 		s.lc.Error(fmt.Sprintf("Read registers error: %s", err.Error()))
@@ -155,33 +155,33 @@ func (s *ModbusServer) handleReadHoldingRegisters(srv *mbserver.Server, frame mb
 	return result, &mbserver.Success
 }
 
-// handleReadInputRegisters handles function code 0x04
+// handleReadInputRegisters 处理功能码0x04
 func (s *ModbusServer) handleReadInputRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
-	// Input registers are handled the same as holding registers in this implementation
+	// 在此实现中,输入寄存器的处理方式与保持寄存器相同
 	return s.handleReadHoldingRegisters(srv, frame)
 }
 
-// readCoils reads coil values from the mapping manager's cache
+// readCoils 从映射管理器缓存中读取线圈值
 func (s *ModbusServer) readCoils(startAddr uint16, quantity uint16) ([]byte, error) {
-	// Calculate byte count (8 coils per byte, round up)
+	// 计算字节数(每字节8个线圈,向上取整)
 	byteCount := (quantity + 7) / 8
 
-	// Build response: byte count + coil values
+	// 构建响应:字节数+线圈值
 	result := make([]byte, 1+byteCount)
 	result[0] = byte(byteCount)
 
-	// Read each coil value and pack into bytes
+	// 读取每个线圈值并打包成字节
 	for i := uint16(0); i < quantity; i++ {
 		addr := startAddr + i
 		cachedData, ok := s.mappingManager.GetCachedValue(addr)
 
 		var bitValue bool
 		if ok && cachedData != nil {
-			// Convert cached value to boolean
+			// 将缓存值转换为布尔值
 			bitValue = s.valueToBool(cachedData.Value)
 		}
 
-		// Pack bit into byte
+		// 将位打包到字节中
 		if bitValue {
 			byteIndex := i / 8
 			bitIndex := i % 8
@@ -192,7 +192,7 @@ func (s *ModbusServer) readCoils(startAddr uint16, quantity uint16) ([]byte, err
 	return result, nil
 }
 
-// valueToBool converts various value types to boolean
+// valueToBool 将各种值类型转换为布尔值
 func (s *ModbusServer) valueToBool(value interface{}) bool {
 	switch v := value.(type) {
 	case bool:
@@ -228,34 +228,34 @@ func (s *ModbusServer) valueToBool(value interface{}) bool {
 	}
 }
 
-// readRegisters reads register values from the mapping manager's cache
+// readRegisters 从映射管理器缓存中读取寄存器值
 func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte, error) {
-	// Get cached data for all requested addresses
+	// 获取所有请求地址的缓存数据
 	cachedData, err := s.mappingManager.GetCachedRegisters(startAddr, quantity)
 	if err != nil {
 		return nil, err
 	}
 
-	// Build response: byte count + register values
+	// 构建响应:字节数+寄存器值
 	result := make([]byte, 1+quantity*2)
-	result[0] = byte(quantity * 2) // Byte count
+	result[0] = byte(quantity * 2) // 字节数
 
 	offset := 1
 	for i := uint16(0); i < quantity; i++ {
 		data := cachedData[i]
 		if data == nil {
-			// No data for this address, return zeros
+			// 该地址没有数据,返回零
 			result[offset] = 0
 			result[offset+1] = 0
 		} else {
-			// Convert value to bytes
+			// 将值转换为字节
 			bytes, err := s.converter.ToRegisters(data.Value, data.ValueType, data.Scale, data.Offset)
 			if err != nil {
 				s.lc.Warn(fmt.Sprintf("Conversion error for addr %d: %s", startAddr+i, err.Error()))
 				result[offset] = 0
 				result[offset+1] = 0
 			} else {
-				// Copy first 2 bytes (one register)
+				// 复制前2个字节(一个寄存器)
 				if len(bytes) >= 2 {
 					copy(result[offset:offset+2], bytes[:2])
 				}
@@ -267,7 +267,7 @@ func (s *ModbusServer) readRegisters(startAddr uint16, quantity uint16) ([]byte,
 	return result, nil
 }
 
-// handleWriteSingleCoil handles function code 0x05
+// handleWriteSingleCoil 处理功能码0x05
 func (s *ModbusServer) handleWriteSingleCoil(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 4 {
@@ -277,31 +277,31 @@ func (s *ModbusServer) handleWriteSingleCoil(srv *mbserver.Server, frame mbserve
 	addr := uint16(data[0])<<8 | uint16(data[1])
 	value := uint16(data[2])<<8 | uint16(data[3])
 
-	// Value must be 0x0000 (OFF) or 0xFF00 (ON)
+	// 值必须为0x0000(关)或0xFF00(开)
 	if value != 0x0000 && value != 0xFF00 {
 		return nil, &mbserver.IllegalDataValue
 	}
 
 	s.lc.Debug(fmt.Sprintf("Write single coil: addr=%d, value=0x%04X", addr, value))
 
-	// Check if this address has a mapping
+	// 检查该地址是否有映射
 	mapping, ok := s.mappingManager.GetMappingByAddress(addr)
 	if !ok {
 		s.lc.Warn(fmt.Sprintf("No mapping for address %d", addr))
 		return nil, &mbserver.IllegalDataAddress
 	}
 
-	// Check if writeable
+	// 检查是否可写
 	if mapping.SouthResource != nil && mapping.SouthResource.ReadWrite == "R" {
 		s.lc.Warn(fmt.Sprintf("Address %d is read-only", addr))
 		return nil, &mbserver.IllegalDataAddress
 	}
 
-	// Echo request data for success response
+	// 回显请求数据作为成功响应
 	return data, &mbserver.Success
 }
 
-// handleWriteSingleRegister handles function code 0x06
+// handleWriteSingleRegister 处理功能码0x06
 func (s *ModbusServer) handleWriteSingleRegister(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 4 {
@@ -313,24 +313,24 @@ func (s *ModbusServer) handleWriteSingleRegister(srv *mbserver.Server, frame mbs
 
 	s.lc.Debug(fmt.Sprintf("Write single register: addr=%d, value=%d", addr, value))
 
-	// Check if this address has a mapping
+	// 检查该地址是否有映射
 	mapping, ok := s.mappingManager.GetMappingByAddress(addr)
 	if !ok {
 		s.lc.Warn(fmt.Sprintf("No mapping for address %d", addr))
 		return nil, &mbserver.IllegalDataAddress
 	}
 
-	// Check if writeable
+	// 检查是否可写
 	if mapping.SouthResource != nil && mapping.SouthResource.ReadWrite == "R" {
 		s.lc.Warn(fmt.Sprintf("Address %d is read-only", addr))
 		return nil, &mbserver.IllegalDataAddress
 	}
 
-	// Echo request data for success response
+	// 回显请求数据作为成功响应
 	return data, &mbserver.Success
 }
 
-// handleWriteMultipleCoils handles function code 0x0F (15)
+// handleWriteMultipleCoils 处理功能码0x0F (15)
 func (s *ModbusServer) handleWriteMultipleCoils(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 5 {
@@ -356,7 +356,7 @@ func (s *ModbusServer) handleWriteMultipleCoils(srv *mbserver.Server, frame mbse
 
 	s.lc.Debug(fmt.Sprintf("Write multiple coils: addr=%d, quantity=%d", startAddr, quantity))
 
-	// Validate all addresses are writeable
+	// 验证所有地址都是可写的
 	for i := uint16(0); i < quantity; i++ {
 		addr := startAddr + i
 		mapping, ok := s.mappingManager.GetMappingByAddress(addr)
@@ -366,11 +366,11 @@ func (s *ModbusServer) handleWriteMultipleCoils(srv *mbserver.Server, frame mbse
 		}
 	}
 
-	// Return start address and quantity for success response
+	// 返回起始地址和数量作为成功响应
 	return data[:4], &mbserver.Success
 }
 
-// handleWriteMultipleRegisters handles function code 0x10
+// handleWriteMultipleRegisters 处理功能码0x10
 func (s *ModbusServer) handleWriteMultipleRegisters(srv *mbserver.Server, frame mbserver.Framer) ([]byte, *mbserver.Exception) {
 	data := frame.GetData()
 	if len(data) < 5 {
@@ -382,13 +382,13 @@ func (s *ModbusServer) handleWriteMultipleRegisters(srv *mbserver.Server, frame 
 
 	s.lc.Debug(fmt.Sprintf("Write multiple registers: addr=%d, quantity=%d", startAddr, quantity))
 
-	// Return start address and quantity for success response
+	// 返回起始地址和数量作为成功响应
 	return data[:4], &mbserver.Success
 }
 
-// startRTU starts the Modbus RTU server
+// startRTU 启动Modbus RTU服务器
 func (s *ModbusServer) startRTU() error {
-	// Create serial port configuration
+	// 创建串口配置
 	serialConfig := &serial.Config{
 		Address:  s.config.RTU.Port,
 		BaudRate: s.config.RTU.BaudRate,
@@ -406,7 +406,7 @@ func (s *ModbusServer) startRTU() error {
 		serialConfig.StopBits,
 	))
 
-	// Start RTU listener
+	// 启动RTU监听器
 	err := s.server.ListenRTU(serialConfig)
 	if err != nil {
 		return fmt.Errorf("failed to start RTU listener: %w", err)
@@ -415,7 +415,7 @@ func (s *ModbusServer) startRTU() error {
 	return nil
 }
 
-// Stop stops the Modbus server (TCP or RTU)
+// Stop 停止Modbus服务器(TCP或RTU)
 func (s *ModbusServer) Stop() error {
 	if !s.running.Load() {
 		return nil
@@ -434,7 +434,7 @@ func (s *ModbusServer) Stop() error {
 	return nil
 }
 
-// IsRunning returns whether the server is running
+// IsRunning 返回服务器是否正在运行
 func (s *ModbusServer) IsRunning() bool {
 	return s.running.Load()
 }

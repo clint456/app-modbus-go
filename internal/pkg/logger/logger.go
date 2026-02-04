@@ -14,12 +14,12 @@
  *******************************************************************************/
 
 /*
-Package logger provides a client for integration with the support-logging service. The client can also be configured
-to write logs to a local file rather than sending them to a service.
+包logger为与support-logging服务的集成提供客户端。客户端也可以配置
+为将日志写入本地文件,而不是将其发送到服务。
 */
 package logger
 
-// Logging client for the Go implementation of edgexfoundry
+// EdgeX Foundry的Go实现的日志客户端
 
 import (
 	"fmt"
@@ -50,15 +50,15 @@ type edgeXLogger struct {
 	filePath   string       // 日志文件路径
 }
 
-// LoggerConfig holds configuration for logger creation
+// LoggerConfig 保持日志记录器创建的配置
 type LoggerConfig struct {
-	LogLevel      string // Log level (TRACE, DEBUG, INFO, WARN, ERROR)
-	FilePath      string // Path to log file (empty for stdout only)
-	FileMaxSizeMB int    // Maximum file size in MB before rotation (0 = no rotation)
-	EnableConsole bool   // Whether to also output to console
+	LogLevel      string // 日志级别(TRACE, DEBUG, INFO, WARN, ERROR)
+	FilePath      string // 日志文件路径(空表示仅stdout)
+	FileMaxSizeMB int    // 轮转前的最大文件大小(MB)(0=无轮转)
+	EnableConsole bool   // 是否也输出到控制台
 }
 
-// NewClient creates an instance of LoggingClient with default settings (stdout only)
+// NewClient 创建具有默认设置的LoggingClient实例(仅stdout)
 func NewClient(logLevel string) LoggingClient {
 	return NewClientWithConfig(LoggerConfig{
 		LogLevel:      logLevel,
@@ -66,7 +66,7 @@ func NewClient(logLevel string) LoggingClient {
 	})
 }
 
-// NewClientWithFile creates an instance of LoggingClient that writes to both console and file
+// NewClientWithFile 创建一个LoggingClient实例,同时写入控制台和文件
 func NewClientWithFile(logLevel string, filePath string) (LoggingClient, error) {
 	return NewClientWithConfig(LoggerConfig{
 		LogLevel:      logLevel,
@@ -75,7 +75,7 @@ func NewClientWithFile(logLevel string, filePath string) (LoggingClient, error) 
 	}), nil
 }
 
-// NewClientWithConfig creates an instance of LoggingClient with custom configuration
+// NewClientWithConfig 使用自定义配置创建LoggingClient实例
 func NewClientWithConfig(config LoggerConfig) LoggingClient {
 	upper := strings.ToUpper(config.LogLevel)
 	if !isValidLogLevel(upper) {
@@ -125,7 +125,7 @@ func NewClientWithConfig(config LoggerConfig) LoggingClient {
 	return logger
 }
 
-// Close closes the log file if one is open
+// Close 关闭日志文件(如果有打开的话)
 func (l *edgeXLogger) Close() error {
 	if l.fileHandle != nil {
 		err := l.fileHandle.Close()
@@ -135,8 +135,8 @@ func (l *edgeXLogger) Close() error {
 	return nil
 }
 
-// LogLevels returns an array of the possible log levels in order from most to least verbose.
-func logLevels() []string { // 不带图标，仅用于比较
+// logLevels 返回按从最到最不详细顺序的可能日志级别的数组
+func logLevels() []string { // 不带图标,仅用于比较
 	return []string{TraceLog, DebugLog, InfoLog, WarnLog, ErrorLog}
 }
 

@@ -6,7 +6,7 @@ import (
 	"math"
 )
 
-// ByteOrder defines the byte ordering for multi-byte values
+// ByteOrder 定义多字节值的字节顺序
 type ByteOrder int
 
 const (
@@ -14,19 +14,19 @@ const (
 	LittleEndian
 )
 
-// Converter handles data type conversions between Go types and Modbus registers
+// Converter 处理Go类型和Modbus寄存器之间的数据类型转换
 type Converter struct {
 	byteOrder ByteOrder
 }
 
-// NewConverter creates a new converter with the specified byte order
+// NewConverter 使用指定的字节顺序创建新的转换器
 func NewConverter(order ByteOrder) *Converter {
 	return &Converter{byteOrder: order}
 }
 
-// ToRegisters converts a value to Modbus register bytes based on value type
+// ToRegisters 根据值类型将值转换为Modbus寄存器字节
 func (c *Converter) ToRegisters(value interface{}, valueType string, scale, offset float64) ([]byte, error) {
-	// Apply scale and offset to numeric values
+	// 对数值应用缩放和偏移
 	scaledValue := c.applyScaleOffset(value, scale, offset)
 
 	switch valueType {
@@ -49,12 +49,12 @@ func (c *Converter) ToRegisters(value interface{}, valueType string, scale, offs
 	case "uint64":
 		return c.uint64ToBytes(scaledValue)
 	default:
-		// Default to uint16
+		// 默认为uint16
 		return c.uint16ToBytes(scaledValue)
 	}
 }
 
-// GetRegisterCount returns the number of registers needed for a value type
+// GetRegisterCount 返回值类型所需的寄存器数量
 func (c *Converter) GetRegisterCount(valueType string) int {
 	switch valueType {
 	case "bool", "int16", "uint16":
@@ -68,7 +68,7 @@ func (c *Converter) GetRegisterCount(valueType string) int {
 	}
 }
 
-// applyScaleOffset applies scale and offset to a value
+// applyScaleOffset 对值应用缩放和偏移
 func (c *Converter) applyScaleOffset(value interface{}, scale, offset float64) interface{} {
 	if scale == 0 {
 		scale = 1
@@ -105,11 +105,11 @@ func (c *Converter) applyScaleOffset(value interface{}, scale, offset float64) i
 		return value
 	}
 
-	// Apply: result = (value - offset) / scale
+	// 应用: result = (value - offset) / scale
 	return (floatVal - offset) / scale
 }
 
-// putUint16 writes a uint16 value to bytes with the configured byte order
+// putUint16 使用配置的字节顺序将uint16值写入字节
 func (c *Converter) putUint16(result []byte, v uint16) {
 	if c.byteOrder == BigEndian {
 		binary.BigEndian.PutUint16(result, v)
@@ -118,7 +118,7 @@ func (c *Converter) putUint16(result []byte, v uint16) {
 	}
 }
 
-// putUint32 writes a uint32 value to bytes with the configured byte order
+// putUint32 使用配置的字节顺序将uint32值写入字节
 func (c *Converter) putUint32(result []byte, v uint32) {
 	if c.byteOrder == BigEndian {
 		binary.BigEndian.PutUint32(result, v)
@@ -127,7 +127,7 @@ func (c *Converter) putUint32(result []byte, v uint32) {
 	}
 }
 
-// putUint64 writes a uint64 value to bytes with the configured byte order
+// putUint64 使用配置的字节顺序将uint64值写入字节
 func (c *Converter) putUint64(result []byte, v uint64) {
 	if c.byteOrder == BigEndian {
 		binary.BigEndian.PutUint64(result, v)
@@ -136,7 +136,7 @@ func (c *Converter) putUint64(result []byte, v uint64) {
 	}
 }
 
-// getUint16 reads a uint16 value from bytes with the configured byte order
+// getUint16 使用配置的字节顺序从字节读取uint16值
 func (c *Converter) getUint16(data []byte) uint16 {
 	if c.byteOrder == BigEndian {
 		return binary.BigEndian.Uint16(data)
@@ -144,7 +144,7 @@ func (c *Converter) getUint16(data []byte) uint16 {
 	return binary.LittleEndian.Uint16(data)
 }
 
-// getUint32 reads a uint32 value from bytes with the configured byte order
+// getUint32 使用配置的字节顺序从字节读取uint32值
 func (c *Converter) getUint32(data []byte) uint32 {
 	if c.byteOrder == BigEndian {
 		return binary.BigEndian.Uint32(data)
@@ -152,7 +152,7 @@ func (c *Converter) getUint32(data []byte) uint32 {
 	return binary.LittleEndian.Uint32(data)
 }
 
-// getUint64 reads a uint64 value from bytes with the configured byte order
+// getUint64 使用配置的字节顺序从字节读取uint64值
 func (c *Converter) getUint64(data []byte) uint64 {
 	if c.byteOrder == BigEndian {
 		return binary.BigEndian.Uint64(data)
@@ -373,7 +373,7 @@ func (c *Converter) uint64ToBytes(value interface{}) ([]byte, error) {
 	return result, nil
 }
 
-// FromBytes converts Modbus register bytes back to a value based on value type
+// FromBytes 根据值类型将Modbus寄存器字节转换回值
 func (c *Converter) FromBytes(data []byte, valueType string, scale, offset float64) (interface{}, error) {
 	if scale == 0 {
 		scale = 1
@@ -443,7 +443,7 @@ func (c *Converter) FromBytes(data []byte, valueType string, scale, offset float
 		}
 		rawValue = float64(math.Float32frombits(bits))
 	default:
-		// Default to uint16
+		// 默认为uint16
 		if len(data) < 2 {
 			return nil, fmt.Errorf("insufficient data")
 		}
@@ -456,6 +456,6 @@ func (c *Converter) FromBytes(data []byte, valueType string, scale, offset float
 		rawValue = float64(v)
 	}
 
-	// Apply inverse: value = raw * scale + offset
+	// 应用逆运算: value = raw * scale + offset
 	return rawValue*scale + offset, nil
 }

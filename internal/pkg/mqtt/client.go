@@ -10,24 +10,24 @@ import (
 	pahomqtt "github.com/eclipse/paho.mqtt.golang"
 )
 
-// MessageHandler handles incoming MQTT messages of a specific type
+// MessageHandler 处理特定类型的传入MQTT消息
 type MessageHandler func(msg *MQTTMessage) error
 
-// ResponseHandler handles incoming MQTT responses of a specific type
+// ResponseHandler 处理特定类型的传入MQTT响应
 type ResponseHandler func(resp *MQTTResponse) error
 
-// ClientManager manages MQTT connections and message routing
+// ClientManager 管理MQTT连接和消息路由
 type ClientManager struct {
 	client pahomqtt.Client
 	nodeID string
 
-	topicUp   string // subscribe: /v1/data/{nodeId}/up
-	topicDown string // publish: /v1/data/{nodeId}/down
+	topicUp   string // 订阅: /v1/data/{nodeId}/up
+	topicDown string // 发布: /v1/data/{nodeId}/down
 
 	messageHandlers  map[int]MessageHandler
 	responseHandlers map[int]ResponseHandler
 
-	// request/response matching
+	// 请求/响应匹配
 	pendingRequests map[string]chan *MQTTResponse
 	pendingMu       sync.RWMutex
 
@@ -37,17 +37,17 @@ type ClientManager struct {
 	mu sync.RWMutex
 }
 
-// ClientConfig holds MQTT client configuration
+// ClientConfig 保存MQTT客户端配置
 type ClientConfig struct {
 	Broker    string
 	ClientID  string
 	Username  string
 	Password  string
 	QoS       byte
-	KeepAlive int // seconds
+	KeepAlive int // 秒数
 }
 
-// NewClientManager creates a new MQTT client manager
+// NewClientManager 创建新的MQTT客户端管理器
 func NewClientManager(nodeID string, cfg ClientConfig, lc logger.LoggingClient) *ClientManager {
 	return &ClientManager{
 		nodeID:           nodeID,
@@ -60,7 +60,7 @@ func NewClientManager(nodeID string, cfg ClientConfig, lc logger.LoggingClient) 
 	}
 }
 
-// Connect establishes the MQTT connection
+// Connect 建立MQTT连接
 func (cm *ClientManager) Connect(cfg ClientConfig) error {
 	opts := pahomqtt.NewClientOptions()
 	opts.AddBroker(cfg.Broker)
@@ -94,7 +94,7 @@ func (cm *ClientManager) Connect(cfg ClientConfig) error {
 	return nil
 }
 
-// Subscribe subscribes to the up topic for receiving messages
+// Subscribe 订阅上行主题以接收消息
 func (cm *ClientManager) Subscribe() error {
 	return cm.subscribe()
 }
@@ -109,18 +109,18 @@ func (cm *ClientManager) subscribe() error {
 	return nil
 }
 
-// onMessage handles incoming MQTT messages and routes to appropriate handler
+// onMessage 处理传入的MQTT消息并路由到相应的处理程序
 func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message) {
 	cm.lc.Debug("Received MQTT message on topic:", msg.Topic())
 
 	raw := msg.Payload()
 
-	// Try parsing as response first (has code/msg fields)
+	// 先尝试解析为响应（有code/msg字段）
 	var resp MQTTResponse
 	if err := json.Unmarshal(raw, &resp); err == nil && resp.Code != 0 {
 		cm.lc.Debug(fmt.Sprintf("Received response type=%d requestId=%s code=%d", resp.Type, resp.RequestID, resp.Code))
 
-		// Check if this is a response to a pending request
+		// 检查这是否是对待机请求的响应
 		cm.pendingMu.RLock()
 		ch, exists := cm.pendingRequests[resp.RequestID]
 		cm.pendingMu.RUnlock()
@@ -135,7 +135,7 @@ func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message)
 			return
 		}
 
-		// Route to response handler
+		// 路由到响应处理程序
 		cm.mu.RLock()
 		handler, ok := cm.responseHandlers[resp.Type]
 		cm.mu.RUnlock()
@@ -147,7 +147,7 @@ func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message)
 		return
 	}
 
-	// Parse as regular message
+	// 解析为常规消息
 	var message MQTTMessage
 	if err := json.Unmarshal(raw, &message); err != nil {
 		cm.lc.Error("Failed to parse MQTT message:", err.Error())
@@ -155,7 +155,7 @@ func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message)
 	}
 	cm.lc.Debug(fmt.Sprintf("Received message type=%d requestId=%s", message.Type, message.RequestID))
 
-	// Route to message handler
+	// 路由到消息处理程序
 	cm.mu.RLock()
 	handler, ok := cm.messageHandlers[message.Type]
 	cm.mu.RUnlock()
@@ -168,7 +168,7 @@ func (cm *ClientManager) onMessage(client pahomqtt.Client, msg pahomqtt.Message)
 	}
 }
 
-// Publish publishes a message to the down topic
+// Publish 发布消息到下行主题
 func (cm *ClientManager) Publish(msg *MQTTMessage) error {
 	data, err := msg.ToJSON()
 	if err != nil {
@@ -183,7 +183,7 @@ func (cm *ClientManager) Publish(msg *MQTTMessage) error {
 	return nil
 }
 
-// PublishResponse publishes a response message to the down topic
+// PublishResponse 发布响应消息到下行主题
 func (cm *ClientManager) PublishResponse(resp *MQTTResponse) error {
 	data, err := resp.ToJSON()
 	if err != nil {
@@ -198,7 +198,7 @@ func (cm *ClientManager) PublishResponse(resp *MQTTResponse) error {
 	return nil
 }
 
-// PublishAndWait publishes a message and waits for a matching response
+// PublishAndWait 发布消息并等待匹配的响应
 func (cm *ClientManager) PublishAndWait(msg *MQTTMessage, timeout time.Duration) (*MQTTResponse, error) {
 	ch := make(chan *MQTTResponse, 1)
 
@@ -224,14 +224,14 @@ func (cm *ClientManager) PublishAndWait(msg *MQTTMessage, timeout time.Duration)
 	}
 }
 
-// StartHeartbeat starts periodic heartbeat sending
+// StartHeartbeat 启动定期心跳发送
 func (cm *ClientManager) StartHeartbeat(interval time.Duration) {
 	cm.heartbeatStop = make(chan struct{})
 	go func() {
 		ticker := time.NewTicker(interval)
 		defer ticker.Stop()
 
-		// Send initial heartbeat immediately
+		// 立即发送初始心跳
 		cm.sendHeartbeat()
 
 		for {

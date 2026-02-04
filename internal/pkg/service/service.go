@@ -16,7 +16,7 @@ import (
 	"syscall"
 )
 
-// AppService is the main application service
+// AppService 是主应用服务
 type AppService struct {
 	appName    string
 	version    string
@@ -34,7 +34,7 @@ type AppService struct {
 	wg     sync.WaitGroup
 }
 
-// NewAppService creates a new application service
+// NewAppService 创建新的应用服务
 func NewAppService(name string, version string) (AppServiceInterface, error) {
 	if name == "" {
 		return nil, errors.New("please specify service name")
@@ -49,32 +49,32 @@ func NewAppService(name string, version string) (AppServiceInterface, error) {
 	}, nil
 }
 
-// Initialize initializes the service with configuration
+// Initialize 使用配置初始化服务
 func (s *AppService) Initialize(configPath string) error {
 	s.configPath = configPath
 
-	// Initialize logger first with default level
+	// 首先使用默认级别初始化记录器
 	s.lc = logger.NewClient("INFO")
 	s.lc.Info("Initializing service:", s.appName, "version:", s.version)
 
-	// Load configuration
+	// 加载配置
 	cfg, err := config.LoadConfig(configPath)
 	if err != nil {
-		// Try default config if file not found
+		// 如果文件未找到,尝试默认配置
 		s.lc.Warn("Failed to load config file, using defaults:", err.Error())
 		cfg = config.DefaultConfig()
 	}
 	s.config = cfg
 
-	// Update log level from config
+	// 从配置更新日志级别
 	if err := s.lc.SetLogLevel(cfg.Writable.LogLevel); err != nil {
 		s.lc.Warn("Failed to set log level:", err.Error())
 	}
 
-	// Create context
+	// 创建上下文
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 
-	// Create MQTT client manager
+	// 创建MQTT客户端管理器
 	s.mqttClient = mqtt.NewClientManager(
 		cfg.NodeID,
 		mqtt.ClientConfig{
@@ -88,24 +88,24 @@ func (s *AppService) Initialize(configPath string) error {
 		s.lc,
 	)
 
-	// Create mapping manager
+	// 创建映射管理器
 	s.mapManage = mappingmanager.NewMappingManager(s.mqttClient, s.lc, &cfg.Cache)
 
-	// Create forward log manager
+	// 创建前向日志管理器
 	s.forwardLogMgr = forwardlog.NewManager(s.mqttClient, s.lc)
 
-	// Create Modbus server
+	// 创建Modbus服务器
 	s.mdbsServer = modbusserver.NewModbusServer(&cfg.Modbus, s.mapManage, s.lc)
 
 	s.lc.Info("Service initialized successfully")
 	return nil
 }
 
-// Run runs the service
+// Run 运行服务
 func (s *AppService) Run() error {
 	s.lc.Info("Starting service:", s.appName)
 
-	// Connect MQTT
+	// 连接MQTT
 	mqttCfg := mqtt.ClientConfig{
 		Broker:    s.config.Mqtt.Broker,
 		ClientID:  s.config.Mqtt.ClientID,
@@ -118,69 +118,69 @@ func (s *AppService) Run() error {
 		return fmt.Errorf("MQTT connect failed: %w", err)
 	}
 
-	// Register message handlers
+	// 注册消息处理程序
 	s.registerMQTTHandlers()
 
-	// Subscribe to topics
+	// 订阅主题
 	if err := s.mqttClient.Subscribe(); err != nil {
 		return fmt.Errorf("MQTT subscribe failed: %w", err)
 	}
 
-	// Query device attributes from data center
+	// 从数据中心查询设备属性
 	if err := s.mapManage.QueryDeviceAttributes(); err != nil {
 		s.lc.Warn("Failed to query device attributes:", err.Error())
 		s.lc.Info("Service will continue with empty mappings, waiting for data push")
 	}
 
-	// Start heartbeat
+	// 启动心跳
 	s.mqttClient.StartHeartbeat(s.config.Heartbeat.GetInterval())
 
-	// Start cache cleanup
+	// 启动缓存清理
 	s.mapManage.StartCleanup()
 
-	// Start forward log manager
+	// 启动前向日志管理器
 	s.forwardLogMgr.Start()
 
-	// Start Modbus server
+	// 启动Modbus服务器
 	if err := s.mdbsServer.Start(s.ctx); err != nil {
 		return fmt.Errorf("Modbus server start failed: %w", err)
 	}
 
 	s.lc.Info("Service started successfully")
 
-	// Wait for shutdown signal
+	// 等待关闭信号
 	s.waitForShutdown()
 
 	return nil
 }
 
-// registerMQTTHandlers registers all MQTT message handlers
+// registerMQTTHandlers 注册所有MQTT消息处理程序
 func (s *AppService) registerMQTTHandlers() {
-	// Type 1: Heartbeat response
+	// Type 1: 心跳响应
 	s.mqttClient.RegisterResponseHandler(mqtt.TypeHeartbeat, func(resp *mqtt.MQTTResponse) error {
 		s.lc.Debug("Heartbeat response received")
 		return nil
 	})
 
-	// Type 2: Query device response is handled by PublishAndWait
+	// Type 2: 查询设备响应由PublishAndWait处理
 
-	// Type 3: Device attribute push
+	// Type 3: 设备属性推送
 	s.mqttClient.RegisterMessageHandler(mqtt.TypeDeviceAttributePush, func(msg *mqtt.MQTTMessage) error {
 		return s.mapManage.HandleAttributeUpdate(msg)
 	})
 
-	// Type 4: Sensor data
+	// Type 4: 传感器数据
 	s.mqttClient.RegisterMessageHandler(mqtt.TypeSensorData, func(msg *mqtt.MQTTMessage) error {
 		return s.mapManage.HandleSensorData(msg)
 	})
 
-	// Type 6: Command
+	// Type 6: 命令
 	s.mqttClient.RegisterMessageHandler(mqtt.TypeCommand, func(msg *mqtt.MQTTMessage) error {
 		return s.handleCommand(msg)
 	})
 }
 
-// handleCommand handles type=6 command messages
+// handleCommand 处理type=6命令消息
 func (s *AppService) handleCommand(msg *mqtt.MQTTMessage) error {
 	payload, err := msg.GetCommandPayload()
 	if err != nil {
@@ -212,7 +212,7 @@ func (s *AppService) handleCommand(msg *mqtt.MQTTMessage) error {
 	return s.mqttClient.PublishResponse(resp)
 }
 
-// handleGetCommand handles GET commands
+// handleGetCommand 处理GET命令
 func (s *AppService) handleGetCommand(payload *mqtt.CommandPayload) *mqtt.CommandResponsePayload {
 	dm, ok := s.mapManage.GetDeviceMapping(payload.CmdContent.NorthDeviceName)
 	if !ok {
@@ -226,7 +226,7 @@ func (s *AppService) handleGetCommand(payload *mqtt.CommandPayload) *mqtt.Comman
 		}
 	}
 
-	// Find the resource and its Modbus address
+	// 查找资源及其Modbus地址
 	for _, rm := range dm.Resources {
 		if rm.NorthResource != nil && rm.NorthResource.Name == payload.CmdContent.NorthResourceName {
 			addr := rm.NorthResource.OtherParameters.Modbus.Address
@@ -264,10 +264,10 @@ func (s *AppService) handleGetCommand(payload *mqtt.CommandPayload) *mqtt.Comman
 	}
 }
 
-// handlePutCommand handles PUT commands
+// handlePutCommand 处理PUT命令
 func (s *AppService) handlePutCommand(payload *mqtt.CommandPayload) *mqtt.CommandResponsePayload {
-	// For now, just acknowledge the PUT command
-	// In a full implementation, this would write to the device via MQTT
+	// 现在只是确认PUT命令
+	// 在完整的实现中,这会通过MQTT向设备写入
 	s.lc.Info(fmt.Sprintf("PUT command: %s/%s = %s",
 		payload.CmdContent.NorthDeviceName,
 		payload.CmdContent.NorthResourceName,
@@ -284,7 +284,7 @@ func (s *AppService) handlePutCommand(payload *mqtt.CommandPayload) *mqtt.Comman
 	}
 }
 
-// waitForShutdown waits for a shutdown signal
+// waitForShutdown 等待关闭信号
 func (s *AppService) waitForShutdown() {
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
@@ -294,31 +294,31 @@ func (s *AppService) waitForShutdown() {
 	s.Stop()
 }
 
-// Stop stops the service
+// Stop 停止服务
 func (s *AppService) Stop() error {
 	s.lc.Info("Stopping service:", s.appName)
 
-	// Cancel context
+	// 取消上下文
 	if s.cancel != nil {
 		s.cancel()
 	}
 
-	// Stop Modbus server
+	// 停止Modbus服务器
 	if s.mdbsServer != nil {
 		s.mdbsServer.Stop()
 	}
 
-	// Stop forward log manager
+	// 停止前向日志管理器
 	if s.forwardLogMgr != nil {
 		s.forwardLogMgr.Stop()
 	}
 
-	// Stop mapping manager
+	// 停止映射管理器
 	if s.mapManage != nil {
 		s.mapManage.Stop()
 	}
 
-	// Disconnect MQTT
+	// 断开MQTT连接
 	if s.mqttClient != nil {
 		s.mqttClient.Disconnect()
 	}
@@ -327,39 +327,39 @@ func (s *AppService) Stop() error {
 	return nil
 }
 
-// Getter methods
+// Getter methods (获取器方法)
 
-// GetLoggingClient returns the logging client
+// GetLoggingClient 返回日志客户端
 func (s *AppService) GetLoggingClient() logger.LoggingClient {
 	return s.lc
 }
 
-// GetMappingManager returns the mapping manager
+// GetMappingManager 返回映射管理器
 func (s *AppService) GetMappingManager() mappingmanager.MappingManagerInterface {
 	return s.mapManage
 }
 
-// GetModbusServer returns the Modbus server
+// GetModbusServer 返回Modbus服务器
 func (s *AppService) GetModbusServer() modbusserver.ModbusServerInterface {
 	return s.mdbsServer
 }
 
-// GetMQTTClient returns the MQTT client manager
+// GetMQTTClient 返回MQTT客户端管理器
 func (s *AppService) GetMQTTClient() *mqtt.ClientManager {
 	return s.mqttClient
 }
 
-// GetForwardLogManager returns the forward log manager
+// GetForwardLogManager 返回前向日志管理器
 func (s *AppService) GetForwardLogManager() *forwardlog.Manager {
 	return s.forwardLogMgr
 }
 
-// GetAppConfig returns the application configuration
+// GetAppConfig 返回应用配置
 func (s *AppService) GetAppConfig() *config.AppConfig {
 	return s.config
 }
 
-// GetContext returns the service context
+// GetContext 返回服务上下文
 func (s *AppService) GetContext() context.Context {
 	return s.ctx
 }

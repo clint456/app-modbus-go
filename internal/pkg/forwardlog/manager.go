@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// LogEntry represents a forward log entry
+// LogEntry 表示前向日志条目
 type LogEntry struct {
 	Status          int
 	NorthDeviceName string
@@ -15,7 +15,7 @@ type LogEntry struct {
 	Timestamp       time.Time
 }
 
-// Manager manages forward log reporting with batching and retry
+// Manager 用批处理和重试管理前向日志报告
 type Manager struct {
 	mqttClient *mqtt.ClientManager
 	lc         logger.LoggingClient
@@ -31,7 +31,7 @@ type Manager struct {
 	doneCh  chan struct{}
 }
 
-// NewManager creates a new forward log manager
+// NewManager 创建新的前向日志管理器
 func NewManager(mqttClient *mqtt.ClientManager, lc logger.LoggingClient) *Manager {
 	return &Manager{
 		mqttClient: mqttClient,
@@ -46,25 +46,25 @@ func NewManager(mqttClient *mqtt.ClientManager, lc logger.LoggingClient) *Manage
 	}
 }
 
-// Start starts the forward log manager
+// Start 启动前向日志管理器
 func (m *Manager) Start() {
 	go m.run()
 	m.lc.Info("Forward log manager started")
 }
 
-// Stop stops the forward log manager
+// Stop 停止前向日志管理器
 func (m *Manager) Stop() {
 	close(m.stopCh)
 	<-m.doneCh
 	m.lc.Info("Forward log manager stopped")
 }
 
-// LogSuccess logs a successful data forward
+// LogSuccess 记录成功的数据转发
 func (m *Manager) LogSuccess(northDeviceName string, data map[string]interface{}) {
 	m.addEntry(1, northDeviceName, data)
 }
 
-// LogFailure logs a failed data forward
+// LogFailure 记录失败的数据转发
 func (m *Manager) LogFailure(northDeviceName string, data map[string]interface{}) {
 	m.addEntry(0, northDeviceName, data)
 }

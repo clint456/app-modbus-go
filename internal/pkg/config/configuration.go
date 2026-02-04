@@ -9,14 +9,14 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-// ModbusTcpConfig holds Modbus TCP specific configuration
+// ModbusTcpConfig 保持Modbus TCP特定配置
 type ModbusTcpConfig struct {
 	Host    string `yaml:"Host"`
 	Port    int    `yaml:"Port"`
 	SlaveID byte   `yaml:"SlaveID"`
 }
 
-// ModbusRtuConfig holds Modbus RTU specific configuration
+// ModbusRtuConfig 保持Modbus RTU特定配置
 type ModbusRtuConfig struct {
 	Port     string `yaml:"Port"`
 	BaudRate int    `yaml:"BaudRate"`
@@ -26,33 +26,33 @@ type ModbusRtuConfig struct {
 	SlaveID  byte   `yaml:"SlaveID"`
 }
 
-// ModbusConfig holds all Modbus configuration
+// ModbusConfig 保持所有Modbus配置
 type ModbusConfig struct {
-	Type        string          `yaml:"Type"` // "TCP" or "RTU"
+	Type        string          `yaml:"Type"` // "TCP" 或 "RTU"
 	TCP         ModbusTcpConfig `yaml:"TCP"`
 	RTU         ModbusRtuConfig `yaml:"RTU"`
-	Timeout     int             `yaml:"Timeout"`     // in milliseconds
-	PollingRate int             `yaml:"PollingRate"` // in milliseconds
+	Timeout     int             `yaml:"Timeout"`     // 毫秒
+	PollingRate int             `yaml:"PollingRate"` // 毫秒
 }
 
-// MqttConfig holds MQTT client configuration
+// MqttConfig 保持MQTT客户端配置
 type MqttConfig struct {
 	Broker    string `yaml:"Broker"`
 	ClientID  string `yaml:"ClientID"`
 	Username  string `yaml:"Username"`
 	Password  string `yaml:"Password"`
 	QoS       int    `yaml:"QoS"`
-	KeepAlive int    `yaml:"KeepAlive"` // seconds
+	KeepAlive int    `yaml:"KeepAlive"` // 秒
 	Workers   int    `yaml:"Workers"`
 }
 
-// CacheConfig holds cache configuration
+// CacheConfig 保持缓存配置
 type CacheConfig struct {
-	DefaultTTL      string `yaml:"DefaultTTL"`      // e.g., "30s"
-	CleanupInterval string `yaml:"CleanupInterval"` // e.g., "5m"
+	DefaultTTL      string `yaml:"DefaultTTL"`      // 例如 "30s"
+	CleanupInterval string `yaml:"CleanupInterval"` // 例如 "5m"
 }
 
-// GetDefaultTTL returns the default TTL as time.Duration
+// GetDefaultTTL 返回默认TTL作为time.Duration
 func (c *CacheConfig) GetDefaultTTL() time.Duration {
 	d, err := time.ParseDuration(c.DefaultTTL)
 	if err != nil {
@@ -61,7 +61,7 @@ func (c *CacheConfig) GetDefaultTTL() time.Duration {
 	return d
 }
 
-// GetCleanupInterval returns the cleanup interval as time.Duration
+// GetCleanupInterval 返回清理间隔作为time.Duration
 func (c *CacheConfig) GetCleanupInterval() time.Duration {
 	d, err := time.ParseDuration(c.CleanupInterval)
 	if err != nil {
@@ -70,13 +70,13 @@ func (c *CacheConfig) GetCleanupInterval() time.Duration {
 	return d
 }
 
-// HeartbeatConfig holds heartbeat configuration
+// HeartbeatConfig 保持心跳配置
 type HeartbeatConfig struct {
-	Interval string `yaml:"Interval"` // e.g., "2m"
-	Timeout  string `yaml:"Timeout"`  // e.g., "10s"
+	Interval string `yaml:"Interval"` // 例如 "2m"
+	Timeout  string `yaml:"Timeout"`  // 例如 "10s"
 }
 
-// GetInterval returns the heartbeat interval as time.Duration
+// GetInterval 返回心跳间隔作为time.Duration
 func (h *HeartbeatConfig) GetInterval() time.Duration {
 	d, err := time.ParseDuration(h.Interval)
 	if err != nil {
@@ -85,7 +85,7 @@ func (h *HeartbeatConfig) GetInterval() time.Duration {
 	return d
 }
 
-// GetTimeout returns the heartbeat timeout as time.Duration
+// GetTimeout 返回心跳超时作为time.Duration
 func (h *HeartbeatConfig) GetTimeout() time.Duration {
 	d, err := time.ParseDuration(h.Timeout)
 	if err != nil {
@@ -94,18 +94,18 @@ func (h *HeartbeatConfig) GetTimeout() time.Duration {
 	return d
 }
 
-// WritableConfig holds runtime-changeable configuration
+// WritableConfig 保持运行时可更改的配置
 type WritableConfig struct {
 	LogLevel string `yaml:"LogLevel"`
 }
 
-// ServiceConfig holds service HTTP endpoint configuration
+// ServiceConfig 保持服务HTTP端点配置
 type ServiceConfig struct {
 	Host string `yaml:"Host"`
 	Port int    `yaml:"Port"`
 }
 
-// AppConfig is the main configuration structure
+// AppConfig 是主配置结构
 type AppConfig struct {
 	Writable  WritableConfig  `yaml:"Writable"`
 	Service   ServiceConfig   `yaml:"Service"`
@@ -116,7 +116,7 @@ type AppConfig struct {
 	Heartbeat HeartbeatConfig `yaml:"Heartbeat"`
 }
 
-// Validate validates the configuration
+// Validate 验证配置
 func (c *AppConfig) Validate() error {
 	if c.NodeID == "" {
 		return errors.New("NodeID cannot be empty")
@@ -128,16 +128,16 @@ func (c *AppConfig) Validate() error {
 		return errors.New("MQTT ClientID cannot be empty")
 	}
 	if c.Mqtt.Workers <= 0 {
-		c.Mqtt.Workers = 4 // default
+		c.Mqtt.Workers = 4 // 默认值
 	}
 	if c.Mqtt.QoS < 0 || c.Mqtt.QoS > 2 {
 		return errors.New("MQTT QoS must be 0, 1, or 2")
 	}
 	if c.Mqtt.KeepAlive <= 0 {
-		c.Mqtt.KeepAlive = 60 // default
+		c.Mqtt.KeepAlive = 60 // 默认值
 	}
 
-	// Validate Modbus config based on type
+	// 根据类型验证Modbus配置
 	switch c.Modbus.Type {
 	case "TCP":
 		if c.Modbus.TCP.Host == "" {
@@ -169,10 +169,10 @@ func (c *AppConfig) Validate() error {
 			c.Modbus.RTU.SlaveID = 1
 		}
 	default:
-		c.Modbus.Type = "TCP" // default to TCP
+		c.Modbus.Type = "TCP" // 默认使用TCP
 	}
 
-	// Set defaults for cache and heartbeat
+	// 为缓存和心跳设置默认值
 	if c.Cache.DefaultTTL == "" {
 		c.Cache.DefaultTTL = "30s"
 	}
@@ -186,12 +186,12 @@ func (c *AppConfig) Validate() error {
 		c.Heartbeat.Timeout = "10s"
 	}
 
-	// Set defaults for writable
+	// 为可写部分设置默认值
 	if c.Writable.LogLevel == "" {
 		c.Writable.LogLevel = "INFO"
 	}
 
-	// Set defaults for service
+	// 为服务设置默认值
 	if c.Service.Host == "" {
 		c.Service.Host = "localhost"
 	}
@@ -202,7 +202,7 @@ func (c *AppConfig) Validate() error {
 	return nil
 }
 
-// LoadConfig loads configuration from a YAML file
+// LoadConfig 从YAML文件加载配置
 func LoadConfig(path string) (*AppConfig, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -221,7 +221,7 @@ func LoadConfig(path string) (*AppConfig, error) {
 	return &config, nil
 }
 
-// DefaultConfig returns a default configuration
+// DefaultConfig 返回默认配置
 func DefaultConfig() *AppConfig {
 	return &AppConfig{
 		Writable: WritableConfig{
