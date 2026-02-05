@@ -211,7 +211,7 @@ func (m *MappingManager) UpdateCache(northDevName string, data map[string]interf
 	updatedCount := 0
 	for _, rm := range dm.Resources {
 		if rm.NorthResource == nil || rm.SouthResource == nil {
-			m.lc.Debug(fmt.Sprintf("Skipping resource: NorthResource or SouthResource is nil"))
+			m.lc.Debug("Skipping resource: NorthResource or SouthResource is nil")
 			continue
 		}
 
@@ -276,10 +276,10 @@ func (m *MappingManager) HandleSensorData(msg *mqtt.MQTTMessage) error {
 }
 
 // LogDataForward 记录数据转发日志（当Modbus客户端读取数据时调用）
-// data: 本次Modbus请求读取的所有资源数据 map[resourceName]value
-func (m *MappingManager) LogDataForward(northDeviceName string, data map[string]interface{}) {
-	if len(data) == 0 {
-		return // 没有数据不上报
+// forwardedData: map[deviceName]map[resourceName]value
+func (m *MappingManager) LogDataForward(forwardedData map[string]map[string]interface{}) {
+	if len(forwardedData) == 0 {
+		return
 	}
 
 	m.mu.RLock()
@@ -287,7 +287,27 @@ func (m *MappingManager) LogDataForward(northDeviceName string, data map[string]
 	m.mu.RUnlock()
 
 	if handler != nil {
-		handler.LogSuccess(northDeviceName, data)
+		// 合并所有设备数据到一个map，一次Modbus请求只产生一个日志
+		mergedData := make(map[string]interface{})
+		var primaryDevice string
+		
+		for deviceName, deviceData := range forwardedData {
+			if primaryDevice == "" {
+				primaryDevice = deviceName // 使用第一个设备作为主设备名
+			}
+			// 使用 "deviceName.resourceName" 作为key来区分不同设备的资源
+			for resourceName, value := range deviceData {
+				if len(forwardedData) > 1 {
+					// 多设备时加上设备名前缀
+					mergedData[deviceName+"."+resourceName] = value
+				} else {
+					// 单设备时直接使用资源名
+					mergedData[resourceName] = value
+				}
+			}
+		}
+		
+		handler.LogSuccess(primaryDevice, mergedData)
 	}
 }
 
